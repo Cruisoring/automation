@@ -1,0 +1,64 @@
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.least.automation</groupId>
+    <artifactId>automation</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>core</module>
+        <module>cucumber</module>
+        <module>worker</module>
+    </modules>
+
+    <name>automation aggregator</name>
+    <url>http://maven.apache.org</url>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <drivers.path>${project.basedir}/../../drivers</drivers.path>
+
+        <!-- Driver Path -->
+        <webdriver.chrome.driver>${drivers.path}</webdriver.chrome.driver>
+        <webdriver.gecko.driver>${drivers.path}</webdriver.gecko.driver>
+        <webdriver.opera.driver>${drivers.path}</webdriver.opera.driver>
+        <phantomjs.binary.path>${drivers.path}</phantomjs.binary.path>
+        <webdriver.edge.driver>${drivers.path}</webdriver.edge.driver>
+        <webdriver.ie.driver>${drivers.path}</webdriver.ie.driver>
+
+        <!-- Dependency versions -->
+        <selenium.version>3.8.1</selenium.version>
+        <testng.version>6.13.1</testng.version>
+        <!--<cucumber.version>1.2.4</cucumber.version>-->
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.seleniumhq.selenium</groupId>
+            <artifactId>selenium-java</artifactId>
+            <version>${selenium.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-exec</artifactId>
+            <version>1.3</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.7</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <version>${testng.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>

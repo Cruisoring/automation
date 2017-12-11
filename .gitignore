@@ -1,0 +1,10 @@
+screenshots/*.png
+.idea/*.xml
+.idea/libraries/*.xml
+*/target/*
+*.iml
+tasks.xml
+**/target
+*.png
+*.log
+*.class
