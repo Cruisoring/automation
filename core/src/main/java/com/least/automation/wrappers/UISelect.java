@@ -1,9 +1,8 @@
 package com.least.automation.wrappers;
 
 import com.least.automation.helpers.Logger;
-import com.objectui.interfaces.IContext;
-import com.objectui.utilities.Logger;
-import org.apache.commons.lang3.StringEscapeUtils;
+import com.least.automation.interfaces.WorkingContext;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Dimension;
@@ -17,9 +16,6 @@ import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
-/**
- * Created by wiljia on 2/08/2017.
- */
 public class UISelect extends UIObject {
 
     public static final By defaultSelectLocator = By.cssSelector("select");
@@ -27,15 +23,15 @@ public class UISelect extends UIObject {
     protected static Boolean DefaultExpandBeforeSelect = false;
     protected static long DefaultWaitAfterExpanding = 500;
 
-    public UISelect(IContext context, By by, Integer index) {
+    public UISelect(WorkingContext context, By by, Integer index) {
         super(context, by, index);
     }
 
-    public UISelect(IContext context, By by) {
+    public UISelect(WorkingContext context, By by) {
         this(context, by, null);
     }
 
-    public UISelect(IContext context) {
+    public UISelect(WorkingContext context) {
         this(context, defaultSelectLocator);
     }
 
@@ -65,14 +61,14 @@ public class UISelect extends UIObject {
         int yOffset = size.getHeight() / 2;
         int xOffset = size.getWidth() - yOffset;
 
-        Actions builder = new Actions(getPlayer().driver);
+        Actions builder = new Actions(getWorker().driver);
         builder.moveToElement(getFreshElement(), xOffset, yOffset).clickAndHold().perform();
         sleep(DefaultWaitAfterExpanding);
         builder.moveToElement(getElement()).release().perform();
     }
 
     public Boolean selectOption(By optionBy, Boolean expandBeforeSelect) {
-        getPlayer().waitPageReady();
+        getWorker().waitPageReady();
 
         UIObject optionToSelect = new UIObject(this, optionBy);
         if (!optionToSelect.exists()) {
@@ -125,7 +121,7 @@ public class UISelect extends UIObject {
     public Boolean selectOption(String key, Boolean expandBeforeSelect) {
         Boolean result = false;
         try(Logger.Timer timer = Logger.M()) {
-                getPlayer().waitPageReady();
+                getWorker().waitPageReady();
 
                 String innerHtml = getInnerHTML();
                 if (!StringUtils.containsIgnoreCase(innerHtml, key)){

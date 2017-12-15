@@ -1,8 +1,7 @@
 package com.least.automation.wrappers;
 
 import com.least.automation.helpers.Logger;
-import com.objectui.interfaces.IContext;
-import com.objectui.utilities.Logger;
+import com.least.automation.interfaces.WorkingContext;
 import org.openqa.selenium.By;
 
 /**
@@ -10,11 +9,11 @@ import org.openqa.selenium.By;
  */
 public class UICheckBox extends UIObject  {
 
-    public UICheckBox(IContext context, By by, Integer index) {
+    public UICheckBox(WorkingContext context, By by, Integer index) {
         super(context, by, index);
     }
 
-    public UICheckBox(IContext context, By by) {
+    public UICheckBox(WorkingContext context, By by) {
         super(context, by);
     }
 

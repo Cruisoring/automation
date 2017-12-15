@@ -1,9 +1,8 @@
 package com.least.automation.wrappers;
 
 import com.least.automation.helpers.Logger;
-import com.objectui.interfaces.IContext;
-import com.objectui.interfaces.IUIEdit;
-import com.objectui.utilities.Logger;
+import com.least.automation.interfaces.IUIEdit;
+import com.least.automation.interfaces.WorkingContext;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebElement;
@@ -12,15 +11,15 @@ public class UIEdit extends UIObject implements IUIEdit {
 
     public static final By defaultEditLocator = By.cssSelector("input");
 
-    public UIEdit(IContext context, By by, Integer index) {
+    public UIEdit(WorkingContext context, By by, Integer index) {
         super(context, by, index);
     }
 
-    public UIEdit(IContext context, By by) {
+    public UIEdit(WorkingContext context, By by) {
         super(context, by);
     }
 
-    public UIEdit(IContext context) {
+    public UIEdit(WorkingContext context) {
         super(context, defaultEditLocator);
     }
 

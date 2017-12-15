@@ -5,8 +5,10 @@ import org.openqa.selenium.WebElement;
 
 import java.util.function.BooleanSupplier;
 
-public interface IUIObject extends SearchContext {
+public interface IUIObject extends WorkingContext {
     WebElement getElement();
+
+    Integer getElementsCount();
 
     WebElement getFreshElement();
 

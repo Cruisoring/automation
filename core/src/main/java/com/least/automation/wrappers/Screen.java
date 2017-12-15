@@ -3,9 +3,9 @@ package com.least.automation.wrappers;
 import com.least.automation.helpers.Executor;
 import com.least.automation.helpers.Logger;
 import com.least.automation.helpers.Worker;
-import com.least.automation.helpers.PlayerPool;
 
 import com.least.automation.interfaces.IUIObject;
+import com.least.automation.interfaces.WorkingContext;
 import org.apache.commons.lang3.StringUtils;
 import org.openqa.selenium.*;
 
@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.BooleanSupplier;
 
-public class Screen implements SearchContext {
+public class Screen implements WorkingContext {
     public static final String DefaultRootCssSelector = "body, form, div, span, table";
     public static final Integer DefaultWaitVisibleMills = 10*1000;
     public static final Integer DefaultWaitGoneMills = 5* 1000;
@@ -39,15 +39,15 @@ public class Screen implements SearchContext {
         return root.getFreshElement();
     }
 
-    protected final SearchContext parent;
+    protected final Screen parent;
     //protected final By rootLocator;
     public final String framePath;
 
     protected BooleanSupplier visiblePredicate;
     protected final BooleanSupplier gonePredicate;
 
-    public Screen(SearchContext parent, String framePath, By rootBy, BooleanSupplier isVisible) {
-       this.worker = PlayerPool.getPlayer();
+    public Screen(Screen parent, String framePath, By rootBy, BooleanSupplier isVisible) {
+       this.worker = Worker.getAvailable();
        this.parent = parent;
        this.framePath = Worker.mergeFramePath(parent==null?"":parent.framePath, framePath);
        this.root = new UIObject(parent==null? worker : parent, rootBy == null ? defaultByOfRoot : rootBy, null);

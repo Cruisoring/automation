@@ -1,6 +1,6 @@
 package com.least.automation.helpers;
 
-import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
@@ -84,8 +84,8 @@ public class StringExtensions {
         return containsAny(context, defaultToStringForms, keys);
     }
 
-    public static Boolean containsAny(String context, String[] keys) {
-        return containsAny(context, defaultToStringForms, keys);
+    public static Boolean containsAny(String context, String... keys) {
+        return containsAny(context, defaultToStringForms, (Object[]) keys);
     }
 
     public static Boolean containsAnyIgnoreCase(String context, Function<Object, String[]> toStringForms, Object... keys) {

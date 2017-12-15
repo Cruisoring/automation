@@ -7,10 +7,11 @@ import com.least.automation.helpers.Worker;
 import com.least.automation.helpers.StringExtensions;
 
 import com.least.automation.interfaces.IUIObject;
+import com.least.automation.interfaces.WorkingContext;
 import org.openqa.selenium.*;
 import org.openqa.selenium.interactions.Action;
 import org.openqa.selenium.interactions.Actions;
-import org.openqa.selenium.internal.Locatable;
+import org.openqa.selenium.interactions.internal.Locatable;
 
 import java.util.List;
 import java.util.function.BooleanSupplier;
@@ -34,11 +35,13 @@ public class UIObject implements IUIObject {
         Executor.sleep(timeMills);
     }
 
-    public final SearchContext parent;
+    public final WorkingContext parent;
     public final By locator;
     public final Integer index;
 
-    public UIObject(SearchContext context, By by, Integer index) {
+    protected WebElement element;
+
+    public UIObject(WorkingContext context, By by, Integer index) {
         if(context == null || by == null) {
             throw new NullPointerException("Context and By must be specified.");
         }
@@ -47,31 +50,17 @@ public class UIObject implements IUIObject {
         this.index = index;
     }
 
-    public UIObject(SearchContext context, By by) {
+    public UIObject(WorkingContext context, By by) {
         this(context, by, null);
     }
 
-    protected WebElement element;
-
     public void invalidate(){
-        getPlayer().invalidate();
+        getWorker().invalidate();
         element = null;
     }
 
-    @Override
-    public synchronized WebElement getFreshElement(){
-        invalidate();
-        return getElement();
-    }
-
-    public synchronized List<WebElement> getAllElements() {
-        List<WebElement> elements = parent.findElements(locator);
-        return elements;
-    }
-
-    public synchronized Integer getElementsCount() {
-        List<WebElement> elements = parent.findElements(locator);
-        return elements.size();
+    public Worker getWorker() {
+        return parent.getWorker();
     }
 
     @Override
@@ -90,6 +79,22 @@ public class UIObject implements IUIObject {
         return element;
     }
 
+    @Override
+    public synchronized WebElement getFreshElement(){
+        invalidate();
+        return getElement();
+    }
+
+    public synchronized List<WebElement> getAllElements() {
+        List<WebElement> elements = parent.findElements(locator);
+        return elements;
+    }
+
+    public synchronized Integer getElementsCount() {
+        List<WebElement> elements = parent.findElements(locator);
+        return elements.size();
+    }
+
     protected synchronized WebElement tryGetElement() {
         WebElement result = null;
 
@@ -101,7 +106,7 @@ public class UIObject implements IUIObject {
             } else if (index != null) {
                 result = elements.get(index);
             } else {
-                Worker worker = getPlayer();
+                Worker worker = getWorker();
                 for (int i = 0; i < size; i++) {
                     if (worker.isVisible(elements.get(i))) {
                         return elements.get(i);
@@ -120,13 +125,9 @@ public class UIObject implements IUIObject {
         return result;
     }
 
-    public Worker getPlayer() {
-        return parent.getPlayer();
-    }
-
 //    @Override
     public Boolean waitPageReady() {
-        return getPlayer().waitPageReady();
+        return getWorker().waitPageReady();
     }
 
     Predicate<Object> alwaysReturnTrue = o -> true;
@@ -134,7 +135,7 @@ public class UIObject implements IUIObject {
     @Override
     public Object executeScript(String script, Object... args) {
         return Executor.tryGet(()->{
-            JavascriptExecutor executor = getPlayer().driver;
+            JavascriptExecutor executor = getWorker().driver;
             return executor.executeScript(script, getElement(), args);
         }, DefaultGetElementRetryAttempts, DefaultRetryIntervalMills, alwaysReturnTrue);
     }
@@ -159,7 +160,7 @@ public class UIObject implements IUIObject {
             "return elem != null && !!( elem.offsetWidth || elem.offsetHeight || elem.getClientRects().length );";
 
     public Boolean isVisible() {
-        Worker worker = getPlayer();
+        Worker worker = getWorker();
 
         try {
             return worker.isVisible(element) || worker.isVisible(getFreshElement());
@@ -170,7 +171,7 @@ public class UIObject implements IUIObject {
     }
 
     public Boolean isDisabled(){
-        return getPlayer().isDisabled(getElement());
+        return getWorker().isDisabled(getElement());
     }
 
     @Override
@@ -397,7 +398,7 @@ public class UIObject implements IUIObject {
 
     @Override
     public void mouseOver(){
-        Actions builder = new Actions(getPlayer().driver);
+        Actions builder = new Actions(getWorker().driver);
         builder.moveToElement(getElement()).build().perform();
     }
 
@@ -412,7 +413,7 @@ public class UIObject implements IUIObject {
         if(e == null || !e.isDisplayed()){
             Logger.W("%s is not visible to be right-clicked.", this);
         }
-        Actions builder = new Actions(getPlayer().driver);
+        Actions builder = new Actions(getWorker().driver);
         builder.contextClick(e).perform();
     }
 
@@ -430,7 +431,7 @@ public class UIObject implements IUIObject {
         try (Logger.Timer timer = Logger.M()) {
 
     //        Logger.V("Start waitPageReady");
-            getPlayer().waitPageReady();
+            getWorker().waitPageReady();
     //        Logger.V("End of waitPageReady");
 
             if(!exists()) {
@@ -482,7 +483,7 @@ public class UIObject implements IUIObject {
                 return true;
             } catch (UnhandledAlertException alertEx) {
                 try {
-                    getPlayer().acceptDialog();
+                    getWorker().acceptDialog();
                     if (retry > 0) {
                         return perform(actions, evaluation, retry--);
                     }
@@ -560,7 +561,7 @@ public class UIObject implements IUIObject {
     }
 
     public void clickByOffset(int xOffset, int yOffset) {
-        Actions builder = new Actions(getPlayer().driver);
+        Actions builder = new Actions(getWorker().driver);
         Action action = builder.moveToElement(getElement(), xOffset, yOffset).click().build();
         action.perform();
     }

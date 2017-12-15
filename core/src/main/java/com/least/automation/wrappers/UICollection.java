@@ -6,10 +6,9 @@ package com.least.automation.wrappers;
 
 import com.least.automation.helpers.Executor;
 import com.least.automation.helpers.StringExtensions;
-import com.objectui.interfaces.Creatable;
-import com.objectui.interfaces.IContext;
-import com.objectui.utilities.Executor;
-import com.objectui.utilities.StringExtensions;
+import com.least.automation.interfaces.Creatable;
+import com.least.automation.interfaces.IUIObject;
+import com.least.automation.interfaces.WorkingContext;
 import org.openqa.selenium.By;
 
 import java.util.List;
@@ -24,7 +23,7 @@ public class  UICollection<T extends UIObject> extends UIObject {
 
     protected final Creatable factory;
 
-    public UICollection(IContext context, By by, Integer index, Creatable<? extends UIObject> childFactory) {
+    public UICollection(WorkingContext context, By by, Integer index, Creatable<? extends UIObject> childFactory) {
         super(context, by, index);
         if (childFactory == null) {
             throw new NullPointerException("Factory method must be provided for UICollection!");
@@ -32,11 +31,11 @@ public class  UICollection<T extends UIObject> extends UIObject {
         factory = childFactory;
     }
 
-    public UICollection(IContext context, By by, Integer index, By childrenBy){
+    public UICollection(WorkingContext context, By by, Integer index, By childrenBy){
         this(context, by, index, (c, i)-> new UIObject(c, childrenBy, i));
     }
 
-    public UICollection(IContext context, By by, By childrenBy) {
+    public UICollection(WorkingContext context, By by, By childrenBy) {
         this(context, by, null, childrenBy);
     }
 
@@ -50,7 +49,7 @@ public class  UICollection<T extends UIObject> extends UIObject {
 
         return Executor.tryGet(()-> {
             if (children == null || children.size()==0) {
-                UIObject aChild = factory.create(this, null);
+                IUIObject aChild = factory.create(this, null);
                 int childCount = Executor.tryGet(()->aChild.getElementsCount(),
                         defaultWaitChildrenMills/DefaultRetryIntervalMills,
                         DefaultRetryIntervalMills, i -> i>0);

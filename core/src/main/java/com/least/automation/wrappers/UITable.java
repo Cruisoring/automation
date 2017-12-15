@@ -2,8 +2,7 @@ package com.least.automation.wrappers;
 
 import com.google.common.base.Supplier;
 import com.least.automation.helpers.StringExtensions;
-import com.objectui.interfaces.IContext;
-import com.objectui.utilities.StringExtensions;
+import com.least.automation.interfaces.WorkingContext;
 import org.apache.commons.lang3.StringUtils;
 import org.openqa.selenium.By;
 
@@ -14,15 +13,12 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-/**
- * Created by wiljia on 8/08/2017.
- */
 public class UITable extends UICollection<UITable.UIRow> {
 
     public static final int selectorPosition = By.cssSelector("*").toString().indexOf('*');
     public static final String defaultRowSeperator = "\r\n";
 
-    public static UIRow createRow(IContext context, Integer rowIndex) {
+    public static UIRow createRow(WorkingContext context, Integer rowIndex) {
         if (! (context instanceof UITable)){
             throw new IllegalArgumentException("Context must be a UITable instance");
         }
@@ -36,7 +32,7 @@ public class UITable extends UICollection<UITable.UIRow> {
     private List<String> headerTexts;
 
     //TODO: the tabelCssSelector might not contains table tagname like "parent>.[id='...']"
-    public UITable(IContext context, String tableCssSelector, Integer index) {
+    public UITable(WorkingContext context, String tableCssSelector, Integer index) {
         super(context, By.cssSelector(tableCssSelector), index, (c, i) -> createRow(c, i));
 
         this.tableCssSelector = tableCssSelector ==null ? "table" : tableCssSelector;
@@ -45,7 +41,7 @@ public class UITable extends UICollection<UITable.UIRow> {
                 By.cssSelector(tableCssSelector+">thead>tr>th"));
     }
 
-    public UITable(IContext context, String tableCssSelector) {
+    public UITable(WorkingContext context, String tableCssSelector) {
         this(context, tableCssSelector, null);
     }
 
