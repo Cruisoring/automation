@@ -10,13 +10,17 @@
     <modules>
         <module>core</module>
         <module>cucumber</module>
-        <module>worker</module>
+        <module>testManing</module>
     </modules>
 
     <name>automation aggregator</name>
     <url>http://maven.apache.org</url>
 
     <properties>
+        <project.group>${project.groupId}</project.group>
+        <core.version>${project.version}</core.version>
+        <testManing.version>${project.version}</testManing.version>
+
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <drivers.path>${project.basedir}/../../drivers</drivers.path>
@@ -39,6 +43,18 @@
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>com.least.automation</groupId>
+            <artifactId>core</artifactId>
+            <version>${core.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.least.automation</groupId>
+            <artifactId>testManing</artifactId>
+            <version>${testManing.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.seleniumhq.selenium</groupId>
             <artifactId>selenium-java</artifactId>

@@ -108,6 +108,16 @@ public class Worker implements AutoCloseable, WorkingContext {
 
     public final RemoteWebDriver driver;
 
+    public String asBase64(String description){
+        String div = null;
+        try {
+            String base64 = ((TakesScreenshot)driver).getScreenshotAs(OutputType.BASE64);
+            div = String.format("<div><p>%s</p><img src='data:image/png;base64, %s'/></div>", description, base64);
+        } finally {
+            return div;
+        }
+    }
+
     private final Map<Class<? extends Screen>, Screen> ScreenSingletons = new HashMap<>();
 
     public <T extends Screen> T screenOf(Class<T> instanceClass){
