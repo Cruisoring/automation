@@ -4,6 +4,8 @@ import com.least.automation.enums.DriverType;
 import com.least.automation.enums.ReadyState;
 import com.least.automation.interfaces.WorkingContext;
 import com.least.automation.wrappers.Screen;
+import com.least.automation.wrappers.UICollection;
+import com.least.automation.wrappers.UIObject;
 import org.apache.commons.lang3.StringUtils;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -23,6 +25,9 @@ import java.util.function.Consumer;
 public class Worker implements AutoCloseable, WorkingContext {
     public final static String FrameIndicator = ">";
     public final static String RootFramePath = "";
+    public final static By HtmlBy = By.tagName("html");
+    public final static By BodyBy = By.tagName("body");
+    public final static By HtmlTitleBy = By.tagName("head>title");
 
     public static final String DefaultMatchingHighlightScript = "var e=arguments[0]; e.style.color='teal';e.style.backgroundColor='green';";
     public static final String DefaultContainingHighlightScript = "var e=arguments[0]; e.style.color='olive';e.style.backgroundColor='orange';";
@@ -44,8 +49,8 @@ public class Worker implements AutoCloseable, WorkingContext {
     private static int driverCount = 0;
 
     static {
-        System.setProperty("webdriver.chrome.driver", "vendor/chromedriver.exe");
-        System.setProperty("webdriver.ie.driver", "vendor/IEDriverServer.exe");
+        System.setProperty("webdriver.chrome.driver", "../drivers/chromedriver.exe");
+//        System.setProperty("webdriver.ie.driver", "vendor/IEDriverServer.exe");
     }
 
     private static Worker singleton = null;
@@ -76,7 +81,7 @@ public class Worker implements AutoCloseable, WorkingContext {
             options = new ChromeOptions();
             options.addArguments("--start-maximized");
             options.addArguments("--disable-web-security");
-            options.addArguments("--no-proxy-server");
+//            options.addArguments("--no-proxy-server");
 
             Map<String, Object> prefs = new HashMap<String, Object>();
             prefs.put("credentials_enable_service", false);
@@ -108,14 +113,74 @@ public class Worker implements AutoCloseable, WorkingContext {
 
     public final RemoteWebDriver driver;
 
-    public String asBase64(String description){
-        String div = null;
+    public String asBase64(){
         try {
             String base64 = ((TakesScreenshot)driver).getScreenshotAs(OutputType.BASE64);
-            div = String.format("<div><p>%s</p><img src='data:image/png;base64, %s'/></div>", description, base64);
+            return String.format("<img src='data:image/png;base64, %s'/>", base64);
         } finally {
-            return div;
+            return "";
         }
+    }
+
+    public static final String replaceImageAsBase64Script = "if (typeof window.replaceImage === 'undefined') {\n" +
+            "\tvar canvas = canvas || document.createElement('canvas');\n" +
+            "\tvar ctx = ctx || canvas.getContext('2d');\n" +
+            "\twindow.replaceImage = function(e){\n" +
+            "\t\tif(e.tagName == 'IMG'){\n" +
+            "\t\t\tcanvas.width = e.width;\n" +
+            "\t\t\tcanvas.height = e.height;\n" +
+            "\t\t\tctx.drawImage(e, 0, 0);\n" +
+            "\t\t\te.src = canvas.toDataURL();\n" +
+            "\t\t\treturn true;\n" +
+            "\t\t}else {\n" +
+            "\t\t\treturn false;\n" +
+            "\t\t}\n" +
+            "\t}\n" +
+            "}\n" +
+            "replaceImage(arguments[0]);";
+
+    public static final String getImageBase64 = "var e = arguments[0];\n" +
+            "var canvas = document.createElement('canvas');\n" +
+            "canvas.width = e.width;\n" +
+            "canvas.height = e.height;\n" +
+            "canvas.getContext('2d').drawImage(e, 0, 0);\n" +
+            "return canvas.toDataURL();";
+
+    public boolean replaceImageAsBase64(UIObject image){
+        return (boolean) image.executeScript(replaceImageAsBase64Script);
+    }
+
+    public UIObject getHtmlObject(){
+        return new UIObject(this, HtmlBy);
+    }
+
+    public String asHtmlElement(UIObject object, boolean replaceImageToBase64){
+        UIObject root = getHtmlObject();
+//        List<String> dataURLs = new ArrayList<>();
+        String objectHtml = object.getOuterHTML();
+        int startIndex, endIndex;
+        if(replaceImageToBase64) {
+            UICollection<UIObject> images = new UICollection<UIObject>(object, By.tagName("img"));
+            for (UIObject image : images.getChildren()) {
+                String base64 = image.executeScript(getImageBase64).toString();
+                if (base64 == null || base64.length() == 0){
+                    Logger.W("Failed to replace " + image);
+                    continue;
+                }
+                String imageHtml = image.getOuterHTML();
+                startIndex = imageHtml.indexOf("src=");
+                startIndex = StringExtensions.indexOfAny(imageHtml, startIndex, '"', '\'');
+                endIndex = imageHtml.indexOf(imageHtml.charAt(startIndex), startIndex+1);
+                String replacement = imageHtml.substring(0, startIndex+1) + base64 + imageHtml.substring(endIndex);
+                objectHtml = objectHtml.replace(imageHtml, replacement);
+            }
+        }
+
+        String html = root.getOuterHTML();
+        startIndex = html.indexOf("<", html.indexOf("<body") + 3);
+        endIndex = html.lastIndexOf(">", html.lastIndexOf("</body>"))+1;
+        html = html.substring(0, startIndex) + objectHtml + html.substring(endIndex);
+        return html;
     }
 
     private final Map<Class<? extends Screen>, Screen> ScreenSingletons = new HashMap<>();
@@ -250,6 +315,21 @@ public class Worker implements AutoCloseable, WorkingContext {
 
     public Boolean waitPageReady(){
         return waitForReadyState(DefaultPageReadyTimeoutMills, pageLoadedStates);
+    }
+
+    public final static String isAjaxDoneScript = "return jQuery.active == 0";
+
+    public Boolean isAjaxDone(){
+        Boolean result = (Boolean)driver.executeScript(isAjaxDoneScript);
+        return result;
+    }
+
+    public Boolean waitAjaxDone(long timeoutMills) {
+        return Executor.testUntil(() -> isAjaxDone(), timeoutMills);
+    }
+
+    public Boolean waitAjaxDone(){
+        return waitAjaxDone(DefaultPageReadyTimeoutMills);
     }
 
 //    @Override

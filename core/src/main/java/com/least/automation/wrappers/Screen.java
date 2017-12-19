@@ -154,6 +154,10 @@ public class Screen implements WorkingContext {
         return getWorker().waitPageReady();
     }
 
+    public Boolean waitAjaxDone(){
+        return getWorker().waitAjaxDone();
+    }
+
 //    @Override
     public void invalidate() {
         root.invalidate();

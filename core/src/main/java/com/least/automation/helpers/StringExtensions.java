@@ -92,11 +92,19 @@ public class StringExtensions {
         if (context == null) {
             return false;
         }
-        return Arrays.stream(keys).filter(o -> o != null)
+        return Arrays.stream(keys).filter(o -> o != null).parallel()
                 .anyMatch(o -> matchAny(containsIgnoreCase, context, toStringForms.apply(o)));
     }
 
     public static Boolean containsAnyIgnoreCase(String context, Object... keys) {
         return containsAnyIgnoreCase(context, defaultToStringForms, keys);
+    }
+
+    public static int indexOfAny(String context, int fromIndex, Object... keys) {
+        if(keys.length == 0)
+            return -1;
+
+        return Arrays.stream(keys).map(k -> context.indexOf(k.toString(), fromIndex))
+                .filter(i -> i != -1).min(Integer::min).orElse(-1);
     }
 }

@@ -40,7 +40,7 @@ public class  UICollection<T extends UIObject> extends UIObject {
     }
 
     public UICollection(UIObject context, By childrenBy) {
-        this(context, context.locator, childrenBy);
+        this(context.parent, context.locator, childrenBy);
     }
 
     protected List<T> children = null;

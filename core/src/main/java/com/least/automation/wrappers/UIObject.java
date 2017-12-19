@@ -86,6 +86,7 @@ public class UIObject implements IUIObject {
     }
 
     public synchronized List<WebElement> getAllElements() {
+
         List<WebElement> elements = parent.findElements(locator);
         return elements;
     }

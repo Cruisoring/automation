@@ -10,7 +10,7 @@
     <modules>
         <module>core</module>
         <module>cucumber</module>
-        <module>testManing</module>
+        <module>testMannings</module>
     </modules>
 
     <name>automation aggregator</name>
@@ -19,19 +19,19 @@
     <properties>
         <project.group>${project.groupId}</project.group>
         <core.version>${project.version}</core.version>
-        <testManing.version>${project.version}</testManing.version>
+        <testMannings.version>${project.version}</testMannings.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <drivers.path>${project.basedir}/../../drivers</drivers.path>
+        <drivers>${basedir}/../drivers</drivers>
 
         <!-- Driver Path -->
-        <webdriver.chrome.driver>${drivers.path}</webdriver.chrome.driver>
-        <webdriver.gecko.driver>${drivers.path}</webdriver.gecko.driver>
-        <webdriver.opera.driver>${drivers.path}</webdriver.opera.driver>
-        <phantomjs.binary.path>${drivers.path}</phantomjs.binary.path>
-        <webdriver.edge.driver>${drivers.path}</webdriver.edge.driver>
-        <webdriver.ie.driver>${drivers.path}</webdriver.ie.driver>
+        <webdriver.chrome.driver>${drivers}/chromedriver.exe</webdriver.chrome.driver>
+        <webdriver.gecko.driver>${drivers}</webdriver.gecko.driver>
+        <webdriver.opera.driver>${drivers}</webdriver.opera.driver>
+        <phantomjs.binary.path>${drivers}</phantomjs.binary.path>
+        <webdriver.edge.driver>${drivers}</webdriver.edge.driver>
+        <webdriver.ie.driver>${drivers}</webdriver.ie.driver>
 
         <!-- Dependency versions -->
         <selenium.version>3.8.1</selenium.version>
@@ -43,18 +43,6 @@
     </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>com.least.automation</groupId>
-            <artifactId>core</artifactId>
-            <version>${core.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.least.automation</groupId>
-            <artifactId>testManing</artifactId>
-            <version>${testManing.version}</version>
-        </dependency>
-
         <dependency>
             <groupId>org.seleniumhq.selenium</groupId>
             <artifactId>selenium-java</artifactId>
@@ -80,4 +68,13 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <resources>
+            <resource>
+                <directory>${basedir}/../core/src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+    </build>
 </project>
