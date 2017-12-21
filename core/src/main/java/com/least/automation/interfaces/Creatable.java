@@ -97,12 +97,15 @@ public interface Creatable<T extends IUIObject> {
 
 
     /**
-     * Get constructor of the concerned Class, either from cache or create new, that shall have same signature as
+     * Get constructor of the concerned UIObjectClass, either from cache or create new, that shall have same signature as
      * T create(IContext context, By by, Integer index)
-     * @param clazz Class to be created
+     * @param clazz UIObjectClass to be created
      * @return Constructor of the exact signature
      */
     public static Creatable getFactoryOf(Class<? extends IUIObject> clazz) {
+//        if(!factories.containsKey(clazz)){
+//
+//        }
         return factories.get(clazz);
     }
 

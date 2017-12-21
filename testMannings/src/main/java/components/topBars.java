@@ -1,7 +1,6 @@
 package components;
 
 import com.least.automation.interfaces.WorkingContext;
-import com.least.automation.wrappers.UICollection;
 import com.least.automation.wrappers.UIObject;
 import org.openqa.selenium.By;
 
@@ -13,11 +12,11 @@ public class topBars {
     public static final int libraryIndex = 2;
     public static final int contentIndex = 3;
 
-    public final UICollection<UIObject> leftButtons;
-    public final UICollection<UIObject> rightButtons;
+    public final UIObject.Collection leftButtons;
+    public final UIObject.Collection rightButtons;
 
     public topBars(WorkingContext context){
-        leftButtons = new UICollection<UIObject>(context, leftSectionBy, 0, liBy);
-        rightButtons = new UICollection<UIObject>(context, rightSectionBy, 0, liBy);
+        leftButtons = new UIObject.Collection(context, leftSectionBy, 0, liBy);
+        rightButtons = new UIObject.Collection(context, rightSectionBy, 0, liBy);
     }
 }

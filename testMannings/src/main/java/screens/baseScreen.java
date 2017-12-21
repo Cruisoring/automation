@@ -1,7 +1,7 @@
 package screens;
 
+import com.least.automation.helpers.Worker;
 import com.least.automation.wrappers.Screen;
-import com.least.automation.wrappers.UICollection;
 import com.least.automation.wrappers.UIObject;
 import components.bookFull;
 import components.topBars;
@@ -13,12 +13,12 @@ public class baseScreen extends Screen {
 
     public final topBars bars;
     public final bookFull book;
-    public final UICollection<UIObject> chapters;
+    public final UIObject.Collection chapters;
     public final UIObject content;
     public final UIObject contentTitle;
 
-    public baseScreen(){
-        super();
+    public baseScreen(Worker worker){
+        super(worker);
         bars = new topBars(this);
         book = new bookFull(this);
         chapters = book.chapters;

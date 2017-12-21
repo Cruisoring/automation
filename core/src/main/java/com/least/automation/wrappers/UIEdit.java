@@ -8,8 +8,22 @@ import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebElement;
 
 public class UIEdit extends UIObject implements IUIEdit {
-
+    public static final Class UIEditClass = UIEdit.class;
     public static final By defaultEditLocator = By.cssSelector("input");
+
+    public static class Collection extends UICollection<UIEdit> {
+        public Collection(WorkingContext context, By by, Integer index, By childrenBy){
+            super(context, by, index, UIEditClass, childrenBy);
+        }
+
+        public Collection(WorkingContext context, By by, By childrenBy){
+            this(context, by, 0, childrenBy);
+        }
+
+        public Collection(UIObject context, By childrenBy) {
+            super(context.parent, context.locator, null, UIEditClass, childrenBy);
+        }
+    }
 
     public UIEdit(WorkingContext context, By by, Integer index) {
         super(context, by, index);

@@ -36,8 +36,8 @@ public class UITable extends UICollection<UITable.UIRow> {
         super(context, By.cssSelector(tableCssSelector), index, (c, i) -> createRow(c, i));
 
         this.tableCssSelector = tableCssSelector ==null ? "table" : tableCssSelector;
-        headers = new UICollection<UIObject>(this,
-                By.cssSelector(tableCssSelector+">thead>tr"),
+        headers = new UIObject.Collection(this,
+                By.cssSelector(tableCssSelector+">thead>tr"), null,
                 By.cssSelector(tableCssSelector+">thead>tr>th"));
     }
 
@@ -140,7 +140,7 @@ public class UITable extends UICollection<UITable.UIRow> {
         return StringExtensions.containsAllIgnoreCase(allText, keys);
     }
 
-    public class UIRow extends UICollection<UIObject> {
+    public class UIRow extends UIObject.Collection {
         public static final String cellTextSplitter = "  |  ";
         public static final String cellTextConnector = "\t";
 

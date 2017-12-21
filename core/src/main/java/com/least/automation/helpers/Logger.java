@@ -122,13 +122,13 @@ public class Logger {
             case "verbose":
                 return -5;
             case "debug":
-                return 0;
+                return 3;
             case "info":
-                return 1;
+                return 0;
             case "warning":
                 return 0;
             case "error":
-                return 0;
+                return 3;
             default:
                 return 0;
         }
@@ -139,6 +139,9 @@ public class Logger {
     }
 
     public static String getStackTrace(int stackCount){
+        if (stackCount == 0)
+            return  "";
+
         List<String> stacks = getStackTraceElements(stackCount);
         AtomicInteger counter = new AtomicInteger();
 
@@ -189,8 +192,8 @@ public class Logger {
 
     //TODO: check availability of RxJava, or replace with Observable<Message> instead?
     static final Logger OnlyDefaultLogger = new Logger(System.out::println,
-            LogLevel.verbose,
-            LogLevel.debug,
+//            LogLevel.verbose,
+//            LogLevel.debug,
             LogLevel.info, LogLevel.warning, LogLevel.error);
 
     public static Timer M(){
@@ -204,6 +207,34 @@ public class Logger {
     public static Logger V(Exception ex) {
         if(OnlyDefaultLogger != null) {
             OnlyDefaultLogger.log(LogLevel.verbose, ex);
+        }
+        return OnlyDefaultLogger;
+    }
+
+    public static Logger D(Exception ex) {
+        if(OnlyDefaultLogger != null) {
+            OnlyDefaultLogger.log(LogLevel.debug, ex);
+        }
+        return OnlyDefaultLogger;
+    }
+
+    public static Logger I(Exception ex) {
+        if(OnlyDefaultLogger != null) {
+            OnlyDefaultLogger.log(LogLevel.info, ex);
+        }
+        return OnlyDefaultLogger;
+    }
+
+    public static Logger W(Exception ex) {
+        if(OnlyDefaultLogger != null) {
+            OnlyDefaultLogger.log(LogLevel.warning, ex);
+        }
+        return OnlyDefaultLogger;
+    }
+
+    public static Logger E(Exception ex) {
+        if(OnlyDefaultLogger != null) {
+            OnlyDefaultLogger.log(LogLevel.error, ex);
         }
         return OnlyDefaultLogger;
     }

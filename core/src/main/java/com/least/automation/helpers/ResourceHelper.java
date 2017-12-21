@@ -2,10 +2,13 @@ package com.least.automation.helpers;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
+import org.apache.commons.lang3.StringUtils;
+import org.openqa.selenium.InvalidArgumentException;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -15,15 +18,16 @@ import java.util.Properties;
  * Helper class for resource retrieval.
  */
 public class ResourceHelper {
+    public static final String className = ResourceHelper.class.getName();
     /**
      * Check to see if there is a relative resource identified by the resourceFilename.
      * @param resourceFilename  The relative path of the reourcefile to be checked.
      * @return  'True' if the relative path exists, "False" if not.
      */
-    public static Boolean isResourceAvailable(String resourceFilename){
-        URL url = ResourceHelper.class.getClassLoader().getResource(resourceFilename);
-        return url != null;
-    }
+//    public static Boolean isResourceAvailable(ClassLoader classLoader, String resourceFilename){
+//        URL url = classLoader.getResource(resourceFilename);
+//        return url != null;
+//    }
 
     /**
      * Retrieve the content of the resource file a String.
@@ -100,13 +104,34 @@ public class ResourceHelper {
         String propertiesName = file.getName();
         propertiesName = propertiesName.substring(0, propertiesName.indexOf("."));
 
+        Properties properties = getProperties(file);
+        result.put(propertiesName, properties); //Let it throw Exception if there is duplicated keys.
+    }
+
+    public static Properties getProperties(File file){
+        if (file == null || !file.exists())
+            throw new InvalidArgumentException(file.toString());
+
         Properties properties = new Properties();
         try {
             properties.load(new FileReader(file));
-        } catch (IOException e){
-           Logger.E(e.getMessage());
-            return;
+        } finally {
+            return properties;
         }
-        result.put(propertiesName, properties); //Let it throw Exception if there is duplicated keys.
     }
+
+    public static Properties getProperties(String propertyFilename){
+        Class callerClass = ClassHelper.getCallerClass(s -> !StringUtils.equalsIgnoreCase(s.getClassName(), className));
+        ClassLoader classLoader = callerClass.getClassLoader();
+        URL url = classLoader.getResource(propertyFilename);
+        if (url == null)
+            return null;
+
+        try {
+            return getProperties(new File(url.toURI()));
+        } catch (URISyntaxException e) {
+            return null;
+        }
+    }
+
 }

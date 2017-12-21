@@ -1,33 +1,77 @@
 package com.least.automation.wrappers;
 
-import com.least.automation.helpers.Executor;
-import com.least.automation.helpers.Logger;
-import com.least.automation.helpers.Worker;
-
-import com.least.automation.interfaces.IUIObject;
+import com.least.automation.helpers.*;
 import com.least.automation.interfaces.WorkingContext;
 import org.apache.commons.lang3.StringUtils;
-import org.openqa.selenium.*;
+import org.openqa.selenium.By;
+import org.openqa.selenium.ElementNotVisibleException;
+import org.openqa.selenium.StaleElementReferenceException;
+import org.openqa.selenium.WebElement;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.function.BooleanSupplier;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 public class Screen implements WorkingContext {
+    public static final String className = Screen.class.getName();
+
     public static final String DefaultRootCssSelector = "body, form, div, span, table";
     public static final Integer DefaultWaitVisibleMills = 10*1000;
     public static final Integer DefaultWaitGoneMills = 5* 1000;
     public static final By defaultByOfRoot = By.cssSelector(DefaultRootCssSelector);
 
-    public static HashMap<String,HashMap<String,IUIObject>> objectsMapsByName;
-    protected static HashMap<Class,Screen> AllScreens;
-
-    private final Worker worker;
-
-    public Worker getWorker() {
-        return worker;
+    public static Predicate<Worker> predicateByConvention(){
+        Class clazz = ClassHelper.getCallerClass(s -> !StringUtils.equalsIgnoreCase(s.getClassName(), className));
+        String className = clazz.getSimpleName();
+        String urlExpected = className.replaceAll("Screen", "");
+        return w ->{
+            String url = w.driver.getCurrentUrl();
+            boolean result = StringExtensions.containsAllIgnoreCase(url, urlExpected);
+            Logger.I("URL '%s' %s contains '%s'", url, result ? "":"doesn't", urlExpected);
+            return result;
+        };
     }
+
+    public static Map<Class<? extends Screen>, Function<Worker, ? extends Screen>> screenFactories = new HashMap<>();
+
+//    public static HashMap<String,HashMap<String,IUIObject>> objectsMapsByName;
+    public static <T extends Screen> Function<Worker, ? extends Screen> getScreenFactory(Class<T> screenClass){
+        if (screenFactories.containsKey(screenClass)){
+            return screenFactories.get(screenClass);
+        }
+
+        Function<Worker, ? extends Screen> factory = null;
+        try {
+            Constructor con = screenClass.getDeclaredConstructor(Worker.class);
+            con.setAccessible(true);
+            factory = worker -> {
+                try {
+                    return (Screen) con.newInstance(worker);
+                } catch (InstantiationException e) {
+                    e.printStackTrace();
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                } catch (InvocationTargetException e) {
+                    e.printStackTrace();
+                }
+                return null;
+            };
+            screenFactories.put(screenClass, factory);
+            return factory;
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    protected final Worker worker;
 
     protected final UIObject root;
 
@@ -43,56 +87,38 @@ public class Screen implements WorkingContext {
     //protected final By rootLocator;
     public final String framePath;
 
-    protected BooleanSupplier visiblePredicate;
-    protected final BooleanSupplier gonePredicate;
+    protected Predicate<Worker> visiblePredicate;
 
-    public Screen(Screen parent, String framePath, By rootBy, BooleanSupplier isVisible) {
-       this.worker = Worker.getAvailable();
+    public Screen(Worker worker, Screen parent, String framePath, By rootBy, Predicate<Worker> isVisible) {
+       this.worker = worker;
        this.parent = parent;
        this.framePath = Worker.mergeFramePath(parent==null?"":parent.framePath, framePath);
        this.root = new UIObject(parent==null? worker : parent, rootBy == null ? defaultByOfRoot : rootBy, null);
-       this.visiblePredicate = isVisible == null ? ()->getVisibilityByConvention() : isVisible;
-       this.gonePredicate = isVisible == null ? ()->!getVisibilityByConvention() : () -> !isVisible.getAsBoolean();
+       this.visiblePredicate = isVisible == null ? predicateByConvention() : isVisible;
     }
 
-    public Screen(String framePath, By rootBy) {
-       this(null, framePath, rootBy, null);
+    public Screen(Worker worker, String framePath, By rootBy) {
+       this(worker, null, framePath, rootBy, null);
     }
 
-    public Screen(String framePath) {
-       this(framePath, null);
+    public Screen(Worker worker, String framePath) {
+       this(worker, framePath, null);
     }
 
-    public Screen(By rootBy, BooleanSupplier isVisible) {
-        this(null, null, rootBy, isVisible);
+    public Screen(Worker worker, By rootBy, Predicate<Worker> isVisible) {
+        this(worker, null, null, rootBy, isVisible);
     }
 
-    public Screen(By rootBy) {
-        this(null, rootBy);
+    public Screen(Worker worker, By rootBy) {
+        this(worker, null, rootBy);
     }
 
-    public Screen(){
-        this(null, null, null, null);
+    protected Screen(Worker worker){
+        this(worker, null, null, null, null);
     }
 
-    private Boolean getVisibilityByConvention(){
-        worker.waitPageReady(5*1000);
-        if (this.framePath != worker.switchTo(framePath)) {
-            return false;
-        }
-        if (root.locator != defaultByOfRoot) {
-            return root.isDisplayed();
-        }
-        String className = this.getClass().getSimpleName();
-        if (!className.endsWith("Screen")) {
-            return true;
-        }
-
-        String screenNameKey = className.substring(0, className.length()-5);
-        if (StringUtils.isNotBlank(screenNameKey)) {
-            return StringUtils.containsIgnoreCase(worker.driver.getCurrentUrl(), screenNameKey);
-        }
-        return true;
+    public Worker getWorker(){
+        return worker;
     }
 
     public WebElement findElement(By by) {
@@ -135,6 +161,13 @@ public class Screen implements WorkingContext {
         return waitScreenVisible(DefaultWaitVisibleMills);
     }
 
+    public Boolean waitAjaxDone(Integer timeoutMills) {
+        return worker.waitAjaxDone(timeoutMills);
+    }
+    public Boolean waitAjaxDone() {
+        return worker.waitAjaxDone();
+    }
+
     public Boolean waitScreenGone() {
         return waitScreenGone(DefaultWaitGoneMills);
     }
@@ -142,21 +175,26 @@ public class Screen implements WorkingContext {
     public Boolean waitScreenVisible(Integer timeoutMills) {
         timeoutMills =(timeoutMills==null  || timeoutMills <= 0) ? DefaultWaitVisibleMills : timeoutMills;
 
-        return Executor.testUntil(visiblePredicate, timeoutMills);
+        LocalDateTime start = LocalDateTime.now();
+        boolean result = Executor.testUntil(()->visiblePredicate.test(worker), timeoutMills);
+        Duration duration = Duration.between(start, LocalDateTime.now());
+        Logger.I("%s %s visible after %s", this.getClass().getSimpleName(), result?"is":"isn't", duration);
+        return result;
     }
 
     public Boolean waitScreenGone(Integer timeoutMills) {
         timeoutMills =(timeoutMills==null  || timeoutMills <= 0) ? DefaultWaitGoneMills : timeoutMills;
-        return Executor.testUntil(gonePredicate, timeoutMills);
+        LocalDateTime start = LocalDateTime.now();
+        boolean result = Executor.testUntil(()-> !visiblePredicate.test(worker), timeoutMills);
+        Duration duration = Duration.between(start, LocalDateTime.now());
+        Logger.I("%s %s gone after %s", this.getClass().getSimpleName(), result?"is":"isn't", duration);
+        return result;
     }
 
     public Boolean waitPageReady(){
-        return getWorker().waitPageReady();
+        return worker.waitPageReady();
     }
 
-    public Boolean waitAjaxDone(){
-        return getWorker().waitAjaxDone();
-    }
 
 //    @Override
     public void invalidate() {

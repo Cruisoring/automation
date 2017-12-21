@@ -1,29 +1,96 @@
 package com.least.automation.wrappers;
 
-/**
- * Created by wiljia on 2/08/2017.
- */
-
 import com.least.automation.helpers.Executor;
+import com.least.automation.helpers.Logger;
 import com.least.automation.helpers.StringExtensions;
 import com.least.automation.interfaces.Creatable;
-import com.least.automation.interfaces.IUIObject;
 import com.least.automation.interfaces.WorkingContext;
 import org.openqa.selenium.By;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class  UICollection<T extends UIObject> extends UIObject {
+    public final static Class UICollectionClass = UICollection.class;
     public final static String defaultChildTextSeperator = "    ";
     public final static int defaultWaitChildrenMills = 5*1000;
 
-    protected final Creatable factory;
+    public static String getClassesToken(Class... paramClasses){
+        if(Arrays.stream(paramClasses).anyMatch(c -> c.isPrimitive()))
+            throw new IllegalArgumentException("Primitive types are not expected");
+        String result =  Arrays.stream(paramClasses).map(c -> c.getSimpleName()).collect(Collectors.joining("-"));
+        return result;
+    }
 
-    public UICollection(WorkingContext context, By by, Integer index, Creatable<? extends UIObject> childFactory) {
+    public static final String commonConstrcutorKey = getClassesToken(WorkingContext.class, By.class, Integer.class);
+    public static final String alternativeConstrcutorKey = getClassesToken(WorkingContext.class, By.class);
+    public static final Map<String, Creatable> creatableMap = new HashMap<>();
+
+    public static <T extends UIObject> Creatable<T> getChildFactory(Class<? extends UIObject> childClass, final By childrenBy){
+        String creatableKey = String.format("%s(%s)", childClass.getName(), childrenBy.toString());
+        if(creatableMap.containsKey(creatableKey))
+            return (Creatable<T>) creatableMap.get(creatableKey);
+
+        Creatable<T> creatable = null;
+        try {
+            Map<String, Constructor> constructorMap = Arrays.stream(childClass.getConstructors())
+                    .collect(Collectors.toMap(
+                            c -> getClassesToken(c.getParameterTypes()),
+                            c -> c
+                    ));
+
+            if(constructorMap.containsKey(commonConstrcutorKey)){
+                final Constructor constructor = constructorMap.get(commonConstrcutorKey);
+                creatable = (context, index) -> {
+                    try {
+                        Object newInstance = constructor.newInstance(context, childrenBy, index);
+                        return (T) newInstance;
+                    } catch (InstantiationException e) {
+                        e.printStackTrace();
+                    } catch (IllegalAccessException e) {
+                        e.printStackTrace();
+                    } catch (InvocationTargetException e) {
+                        e.printStackTrace();
+                    }
+                    return null;
+                };
+            } else if (constructorMap.containsKey(alternativeConstrcutorKey)){
+                final Constructor constructor = constructorMap.get(alternativeConstrcutorKey);
+                creatable = ((context, index) -> {
+                    try {
+                        return (T) constructor.newInstance(context, childrenBy);
+                    } catch (InstantiationException e) {
+                        e.printStackTrace();
+                    } catch (IllegalAccessException e) {
+                        e.printStackTrace();
+                    } catch (InvocationTargetException e) {
+                        e.printStackTrace();
+                    }
+                    return null;
+                });
+            }
+
+            if(creatable != null){
+                creatableMap.put(creatableKey, creatable);
+            }
+            return creatable;
+        }catch (Exception ex){
+            Logger.E(ex);
+            return null;
+        }
+    }
+
+    protected final Creatable<T> factory;
+
+    public UICollection(WorkingContext context, By by, Integer index, Creatable<T> childFactory) {
         super(context, by, index);
         if (childFactory == null) {
             throw new NullPointerException("Factory method must be provided for UICollection!");
@@ -31,16 +98,14 @@ public class  UICollection<T extends UIObject> extends UIObject {
         factory = childFactory;
     }
 
-    public UICollection(WorkingContext context, By by, Integer index, By childrenBy){
-        this(context, by, index, (c, i)-> new UIObject(c, childrenBy, i));
-    }
+    public UICollection(WorkingContext context, By by, Integer index, Class<? extends UIObject> childClass, By childrenBy){
+        super(context, by, index);
 
-    public UICollection(WorkingContext context, By by, By childrenBy) {
-        this(context, by, null, childrenBy);
+        factory = getChildFactory(childClass, childrenBy);
     }
 
     public UICollection(UIObject context, By childrenBy) {
-        this(context.parent, context.locator, childrenBy);
+        this(context.parent, context.locator, null, UIObject.UIObjectClass, childrenBy);
     }
 
     protected List<T> children = null;
@@ -49,7 +114,7 @@ public class  UICollection<T extends UIObject> extends UIObject {
 
         return Executor.tryGet(()-> {
             if (children == null || children.size()==0) {
-                IUIObject aChild = factory.create(this, null);
+                T aChild = factory.create(this, null);
                 int childCount = Executor.tryGet(()->aChild.getElementsCount(),
                         defaultWaitChildrenMills/DefaultRetryIntervalMills,
                         DefaultRetryIntervalMills, i -> i>0);
@@ -165,7 +230,7 @@ public class  UICollection<T extends UIObject> extends UIObject {
         return this.getFreshElement().equals(another.getFreshElement());
     }
 
-    public Boolean click(int colIndex) {
+    public Boolean clickChild(int colIndex) {
         return Executor.testUntil(()->{
             T cell = get(colIndex);
             if(cell != null) {

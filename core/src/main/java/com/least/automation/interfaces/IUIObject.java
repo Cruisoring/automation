@@ -1,6 +1,5 @@
 package com.least.automation.interfaces;
 
-import org.openqa.selenium.SearchContext;
 import org.openqa.selenium.WebElement;
 
 import java.util.function.BooleanSupplier;
@@ -24,6 +23,8 @@ public interface IUIObject extends WorkingContext {
 
     String getOuterHTML();
 
+    String getTagName();
+
     String getAllText();
 
     String getAttribute(String attributeName);
@@ -37,6 +38,8 @@ public interface IUIObject extends WorkingContext {
     void highlight();
 
     void click();
+
+    boolean click(int ajaxWaitMills);
 
     void clickByScript();
 

@@ -1,11 +1,9 @@
 package com.least.automation.helpers;
 
-import org.apache.commons.text.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -14,7 +12,7 @@ import java.util.stream.Stream;
 
 public class StringExtensions {
 
-    public static final Function<Object, String[]> defaultToStringForms = o-> new String[]{o.toString()};
+    public static final Function<Object, String[]> defaultToStringForms = o -> new String[]{o.toString()};
     public static final BiPredicate<String, String> contains = (s, k) -> StringUtils.contains(s, k);
     public static final BiPredicate<String, String> containsIgnoreCase = (s, k) -> StringUtils.containsIgnoreCase(s, k);
 
@@ -30,10 +28,10 @@ public class StringExtensions {
         return result;
     }
 
-    public static List<String> getSegments(String html, Pattern pattern){
+    public static List<String> getSegments(String html, Pattern pattern) {
         List<String> allMatches = new ArrayList<>();
         Matcher m = pattern.matcher(html);
-        while(m.find()) {
+        while (m.find()) {
             allMatches.add(m.group());
         }
         return allMatches;
@@ -101,10 +99,76 @@ public class StringExtensions {
     }
 
     public static int indexOfAny(String context, int fromIndex, Object... keys) {
-        if(keys.length == 0)
+        if (keys.length == 0)
             return -1;
 
         return Arrays.stream(keys).map(k -> context.indexOf(k.toString(), fromIndex))
                 .filter(i -> i != -1).min(Integer::min).orElse(-1);
+    }
+
+    public static final Pattern escapeCharsPattern = Pattern.compile("(\\[|\\\\|\\^|\\$|\\.|\\||\\?|\\*|\\+|\\(|\\)|\\{|\\})");
+    public static String escapeRegexChars(String template){
+        Matcher matcher = escapeCharsPattern.matcher(template);
+
+        StringBuffer sb = new StringBuffer();
+        while (matcher.find()) {
+            matcher.appendReplacement(sb, "");
+            sb.append("\\" + matcher.group(1));
+        }
+        matcher.appendTail(sb);
+        return sb.toString();
+    }
+
+    public static String replaceAll(String template, Map<String, String> tokens) {
+        // Create pattern of the format "%(token0|token1|...)%"
+        Object[] quotedKeys = tokens.keySet().stream().map(s -> escapeRegexChars(s)).toArray();
+        String patternString = String.format("(%s)", StringUtils.join(quotedKeys, '|'));
+        Pattern pattern = Pattern.compile(patternString);
+        Matcher matcher = pattern.matcher(template);
+
+        StringBuffer sb = new StringBuffer();
+        while (matcher.find()) {
+            matcher.appendReplacement(sb, "");
+            String replacement= tokens.get(matcher.group(1));
+            sb.append(replacement);
+        }
+        matcher.appendTail(sb);
+        return sb.toString();
+    }
+
+    public static List<String> sortedListOf(Collection<String> strings, Comparator<String> comparator){
+        List<String> list = (strings instanceof List) ? (List<String>)strings : new ArrayList<>(strings);
+        Collections.sort(list, comparator);
+        return list;
+    }
+
+    public static List<String> sortedListByLength(Collection<String> strings){
+        return sortedListOf(strings, (l, r) -> Integer.compare(l.length(), r.length()));
+    }
+
+    public static List<String> sortedListByLengthDesc(Collection<String> strings){
+        return sortedListOf(strings, (l, r) -> Integer.compare(r.length(), l.length()));
+    }
+
+    public static String firstMatch(String template, Collection<String> keys, BiPredicate<String, String> predicate) {
+        if(template == null)
+            return null;
+        return keys.stream()
+                .filter(k -> k != null && predicate.test(template, k))
+                .findFirst().orElse(null);
+    }
+
+    public static String firstContains(String template, Collection<String> keys) {
+        return firstMatch(template, keys, String::contains);
+    }
+
+    public static String firstStartsWith(String template, Collection<String> keys) {
+//        keys = sortedListByLengthDesc(keys);
+        return firstMatch(template, keys, String::startsWith);
+    }
+
+    public static String firstEndsWith(String template, Collection<String> keys) {
+//        keys = sortedListByLengthDesc(keys);
+        return firstMatch(template, keys, String::endsWith);
     }
 }

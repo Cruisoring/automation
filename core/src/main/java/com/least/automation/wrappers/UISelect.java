@@ -17,11 +17,25 @@ import java.util.function.Function;
 import java.util.stream.IntStream;
 
 public class UISelect extends UIObject {
-
+    public static final Class UISelectClass = UISelect.class;
     public static final By defaultSelectLocator = By.cssSelector("select");
     public final static String OptionTagName = "option";
     protected static Boolean DefaultExpandBeforeSelect = false;
     protected static long DefaultWaitAfterExpanding = 500;
+
+    public static class Collection extends UICollection<UISelect> {
+        public Collection(WorkingContext context, By by, Integer index, By childrenBy){
+            super(context, by, index, UISelectClass, childrenBy);
+        }
+
+        public Collection(WorkingContext context, By by, By childrenBy){
+            this(context, by, 0, childrenBy);
+        }
+
+        public Collection(UIObject context, By childrenBy) {
+            super(context.parent, context.locator, null, UISelectClass, childrenBy);
+        }
+    }
 
     public UISelect(WorkingContext context, By by, Integer index) {
         super(context, by, index);
@@ -61,14 +75,14 @@ public class UISelect extends UIObject {
         int yOffset = size.getHeight() / 2;
         int xOffset = size.getWidth() - yOffset;
 
-        Actions builder = new Actions(getWorker().driver);
+        Actions builder = new Actions(worker.driver);
         builder.moveToElement(getFreshElement(), xOffset, yOffset).clickAndHold().perform();
         sleep(DefaultWaitAfterExpanding);
         builder.moveToElement(getElement()).release().perform();
     }
 
     public Boolean selectOption(By optionBy, Boolean expandBeforeSelect) {
-        getWorker().waitPageReady();
+        worker.waitPageReady();
 
         UIObject optionToSelect = new UIObject(this, optionBy);
         if (!optionToSelect.exists()) {
@@ -121,7 +135,7 @@ public class UISelect extends UIObject {
     public Boolean selectOption(String key, Boolean expandBeforeSelect) {
         Boolean result = false;
         try(Logger.Timer timer = Logger.M()) {
-                getWorker().waitPageReady();
+                worker.waitPageReady();
 
                 String innerHtml = getInnerHTML();
                 if (!StringUtils.containsIgnoreCase(innerHtml, key)){

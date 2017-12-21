@@ -1,20 +1,22 @@
 package com.least.automation.helpers;
 
 import com.least.automation.interfaces.TriConsumer;
-import com.least.automation.interfaces.TriFunction;
 
 import java.io.InputStream;
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.sql.*;
-import java.sql.Date;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.*;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * SQL Statement Helper to facilitate invoking of either CallableStatement or PreparedStatement from buffered DB helpers.
@@ -205,11 +207,11 @@ public class SQLHelper {
     }
 
     /**
-     * Extract rows of a ResultSet to solid Java Class instances.
+     * Extract rows of a ResultSet to solid Java UIObjectClass instances.
      * @param resultSet ResultSet that could be mapped to Java class instances.
      * @param converter Converter of the ResultSet row to solid class instance.
-     * @param <T>   Type of the Java Class instances.
-     * @return  A list of the solid Java Class instances.
+     * @param <T>   Type of the Java UIObjectClass instances.
+     * @return  A list of the solid Java UIObjectClass instances.
      */
     public static <T> List<T> fromResultSet(ResultSet resultSet, Function<ResultSet, T> converter){
         if(resultSet == null)

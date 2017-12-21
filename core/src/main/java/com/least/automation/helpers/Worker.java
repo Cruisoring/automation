@@ -15,6 +15,11 @@ import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
 
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -25,7 +30,7 @@ import java.util.function.Consumer;
 public class Worker implements AutoCloseable, WorkingContext {
     public final static String FrameIndicator = ">";
     public final static String RootFramePath = "";
-    public final static By HtmlBy = By.tagName("html");
+    public final static By RootBy = By.tagName("html");
     public final static By BodyBy = By.tagName("body");
     public final static By HtmlTitleBy = By.tagName("head>title");
 
@@ -41,33 +46,35 @@ public class Worker implements AutoCloseable, WorkingContext {
 
     public static final int DefaultSwitchFrameRetry = 1;
     public static final long DefaultPageReadyTimeoutMills = 30 * 1000;
-    public static final long DefaultAlertHandlingTimeoutMills = 10*1000;
+    public static final long DefaultAlertHandlingTimeoutMills = 10 * 1000;
     public static final long DefaultIntervalBetweenActions = 300;
 
     private static final List<DriverType> driverTypes = new ArrayList<>();
     private static final List<WebDriver> drivers = new ArrayList<>();
     private static int driverCount = 0;
 
-    static {
-        System.setProperty("webdriver.chrome.driver", "../drivers/chromedriver.exe");
-//        System.setProperty("webdriver.ie.driver", "vendor/IEDriverServer.exe");
-    }
+//    static {
+//        System.setProperty("webdriver.chrome.driver", "../drivers/chromedriver.exe");
+////        System.setProperty("webdriver.ie.driver", "vendor/IEDriverServer.exe");
+//    }
+
+    public static Map<String, String> mappedURLs = new HashMap<>();
 
     private static Worker singleton = null;
 
     public static Worker getAvailable(DriverType... type) {
-        if(singleton == null) {
+        if (singleton == null) {
             singleton = getChromePlayer(null);
         }
         return singleton;
     }
 
-    private static Worker getIEPlayer(DesiredCapabilities desiredCapabilities){
-        if (desiredCapabilities == null){
-            System.setProperty("webdriver.ie.driver.loglevel","TRACE");
+    private static Worker getIEPlayer(DesiredCapabilities desiredCapabilities) {
+        if (desiredCapabilities == null) {
+            System.setProperty("webdriver.ie.driver.loglevel", "TRACE");
             System.setProperty("webdriver.ie.driver.logfile", "C:/Projects/logme.txt");
             DesiredCapabilities caps = DesiredCapabilities.internetExplorer();
-            caps.setCapability(InternetExplorerDriver.INTRODUCE_FLAKINESS_BY_IGNORING_SECURITY_DOMAINS,true);
+            caps.setCapability(InternetExplorerDriver.INTRODUCE_FLAKINESS_BY_IGNORING_SECURITY_DOMAINS, true);
             caps.setCapability(CapabilityType.ACCEPT_SSL_CERTS, true);
             //caps.setCapability(InternetExplorerDriver.IE_ENSURE_CLEAN_SESSION, true);
             WebDriver driver = new InternetExplorerDriver(caps);
@@ -94,7 +101,7 @@ public class Worker implements AutoCloseable, WorkingContext {
     }
 
     public static String mergeFramePath(String parentFramePath, String framePath) {
-        if(!StringUtils.isNotBlank(framePath))
+        if (!StringUtils.isNotBlank(framePath))
             return parentFramePath;
 
         framePath = normalizeFramePath(framePath);
@@ -104,8 +111,9 @@ public class Worker implements AutoCloseable, WorkingContext {
     public static String normalizeFramePath(String original) {
         return Arrays.stream(getFrames(original))
                 .filter(StringUtils::isNotBlank)
-                .reduce((s1, s2) -> s1+FrameIndicator+s2).orElse(RootFramePath);
+                .reduce((s1, s2) -> s1 + FrameIndicator + s2).orElse(RootFramePath);
     }
+
     public static String[] getFrames(String framePath) {
         framePath = StringUtils.isBlank(framePath) ? RootFramePath : framePath;
         return framePath.split("[>&$ ]", 0);
@@ -113,9 +121,9 @@ public class Worker implements AutoCloseable, WorkingContext {
 
     public final RemoteWebDriver driver;
 
-    public String asBase64(){
+    public String asBase64() {
         try {
-            String base64 = ((TakesScreenshot)driver).getScreenshotAs(OutputType.BASE64);
+            String base64 = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BASE64);
             return String.format("<img src='data:image/png;base64, %s'/>", base64);
         } finally {
             return "";
@@ -146,82 +154,46 @@ public class Worker implements AutoCloseable, WorkingContext {
             "canvas.getContext('2d').drawImage(e, 0, 0);\n" +
             "return canvas.toDataURL();";
 
-    public boolean replaceImageAsBase64(UIObject image){
+    public boolean replaceImageAsBase64(UIObject image) {
         return (boolean) image.executeScript(replaceImageAsBase64Script);
     }
 
-    public UIObject getHtmlObject(){
-        return new UIObject(this, HtmlBy);
-    }
+    public final Map<Class<? extends Screen>, Screen> screens = new HashMap<>();
 
-    public String asHtmlElement(UIObject object, boolean replaceImageToBase64){
-        UIObject root = getHtmlObject();
-//        List<String> dataURLs = new ArrayList<>();
-        String objectHtml = object.getOuterHTML();
-        int startIndex, endIndex;
-        if(replaceImageToBase64) {
-            UICollection<UIObject> images = new UICollection<UIObject>(object, By.tagName("img"));
-            for (UIObject image : images.getChildren()) {
-                String base64 = image.executeScript(getImageBase64).toString();
-                if (base64 == null || base64.length() == 0){
-                    Logger.W("Failed to replace " + image);
-                    continue;
-                }
-                String imageHtml = image.getOuterHTML();
-                startIndex = imageHtml.indexOf("src=");
-                startIndex = StringExtensions.indexOfAny(imageHtml, startIndex, '"', '\'');
-                endIndex = imageHtml.indexOf(imageHtml.charAt(startIndex), startIndex+1);
-                String replacement = imageHtml.substring(0, startIndex+1) + base64 + imageHtml.substring(endIndex);
-                objectHtml = objectHtml.replace(imageHtml, replacement);
-            }
+    public <T extends Screen> T getScreen(Class<T> screenClass) {
+        if (screens.containsKey(screenClass)) {
+            return (T) screens.get(screenClass);
         }
-
-        String html = root.getOuterHTML();
-        startIndex = html.indexOf("<", html.indexOf("<body") + 3);
-        endIndex = html.lastIndexOf(">", html.lastIndexOf("</body>"))+1;
-        html = html.substring(0, startIndex) + objectHtml + html.substring(endIndex);
-        return html;
-    }
-
-    private final Map<Class<? extends Screen>, Screen> ScreenSingletons = new HashMap<>();
-
-    public <T extends Screen> T screenOf(Class<T> instanceClass){
-        if(ScreenSingletons.containsKey(instanceClass)) {
-            return (T) ScreenSingletons.get(instanceClass);
-        } else {
-            T instance = null;
-            try {
-                instance = instanceClass.newInstance();
-            } catch (InstantiationException e) {
-                Logger.V(e);
-            } catch (IllegalAccessException e) {
-                Logger.V(e);
-            }
-            ScreenSingletons.put(instanceClass, instance);
-            return instance;
+        T instance = (T) Screen.getScreenFactory(screenClass).apply(this);
+        if (instance != null) {
+            screens.put(screenClass, instance);
         }
+        return instance;
     }
-
-    //protected String lastUrl = "";
 
     protected List<String> currentFrames = new ArrayList<String>();
 
-    public String getCurrentFramePath(){
+    public String getCurrentFramePath() {
         return String.join(FrameIndicator, currentFrames);
     }
 
-    protected Worker(WebDriver driver) {
+    public Worker getWorker() {
+        return this;
+    }
 
+    protected Worker(WebDriver driver) {
         this.driver = (RemoteWebDriver) driver;
     }
 
     public String gotoUrl(String url) {
         driver.get(url);
-        waitPageReady();
-        return  driver.getCurrentUrl();
+        waitAjaxDone(60*1000);
+        String currentUrl = driver.getCurrentUrl();
+        Logger.I("get to: " + currentUrl);
+        return currentUrl;
     }
 
-    public String switchTo(String framePath){
+    public String switchTo(String framePath) {
         return switchTo(framePath, DefaultSwitchFrameRetry);
     }
 
@@ -240,29 +212,29 @@ public class Worker implements AutoCloseable, WorkingContext {
         String[] targetFrames = getFrames(framePath);
         int lastIdenticalIndex = -1;
         int max = Math.min(currentFrames.size(), targetFrames.length);
-        for(int i=0; i<max; i++){
-            if(currentFrames.get(i) == targetFrames[i]){
+        for (int i = 0; i < max; i++) {
+            if (currentFrames.get(i) == targetFrames[i]) {
                 lastIdenticalIndex = i;
             } else {
                 break;
             }
         }
 
-        while (currentFrames.size()-1 > lastIdenticalIndex) {
+        while (currentFrames.size() - 1 > lastIdenticalIndex) {
             driver.switchTo().parentFrame();
-            currentFrames.remove(currentFrames.size()-1);
+            currentFrames.remove(currentFrames.size() - 1);
         }
 
-        for (int i = lastIdenticalIndex + 1; i < targetFrames.length; i ++) {
+        for (int i = lastIdenticalIndex + 1; i < targetFrames.length; i++) {
             String nextFrame = targetFrames[i];
             try {
-                if (StringUtils.isNotBlank(nextFrame)){
+                if (StringUtils.isNotBlank(nextFrame)) {
                     driver.switchTo().frame(nextFrame);
                 }
                 currentFrames.add(nextFrame);
             } catch (NoSuchFrameException ex) {
                 Logger.W("Failed to switch to frame '%s'.", nextFrame);
-                if(retry > 0){
+                if (retry > 0) {
                     driver.switchTo().defaultContent();
                     currentFrames.clear();
                     return switchTo(framePath, retry--);
@@ -275,7 +247,7 @@ public class Worker implements AutoCloseable, WorkingContext {
         }
 
         String currentFramePath = getCurrentFramePath();
-        if(!StringUtils.equals(oldFramePath, currentFramePath))
+        if (!StringUtils.equals(oldFramePath, currentFramePath))
             Logger.I("Switch Browser from '%s' to '%s'.", oldFramePath, currentFramePath);
         //lastUrl = driver.getCurrentUrl();
         return currentFramePath;
@@ -286,8 +258,7 @@ public class Worker implements AutoCloseable, WorkingContext {
             + "else if(document && document.parentWindow) return document.parentWindow.document.readyState;"
             + "else return 'unknown';";
 
-    public ReadyState getReadyState()
-    {
+    public ReadyState getReadyState() {
         try {
             String stateStr = driver.executeScript(getReadyStateScript).toString();
             return ReadyState.fromString(stateStr);
@@ -299,28 +270,29 @@ public class Worker implements AutoCloseable, WorkingContext {
         }
     }
 
-    protected Boolean waitForReadyState(long timeoutMillis,EnumSet<ReadyState> expectedStates) {
+    protected Boolean waitForReadyState(long timeoutMillis, EnumSet<ReadyState> expectedStates) {
         Boolean isReady = false;
 //        try (Logger.Timer timer = Logger.M()) {
-                final BooleanSupplier evaluator = () -> expectedStates.contains(getReadyState());
-                isReady = Executor.testUntil(evaluator, timeoutMillis);
+        final BooleanSupplier evaluator = () ->
+                expectedStates.contains(getReadyState()) || isAjaxDone();
+        isReady = Executor.testUntil(evaluator, timeoutMillis);
 //        } catch (Exception e) {
 //        }
         return isReady;
     }
 
-    public Boolean waitPageReady(long timeoutMills){
+    public Boolean waitPageReady(long timeoutMills) {
         return waitForReadyState(timeoutMills, pageLoadedStates);
     }
 
-    public Boolean waitPageReady(){
+    public Boolean waitPageReady() {
         return waitForReadyState(DefaultPageReadyTimeoutMills, pageLoadedStates);
     }
 
     public final static String isAjaxDoneScript = "return jQuery.active == 0";
 
-    public Boolean isAjaxDone(){
-        Boolean result = (Boolean)driver.executeScript(isAjaxDoneScript);
+    public Boolean isAjaxDone() {
+        Boolean result = (Boolean) driver.executeScript(isAjaxDoneScript);
         return result;
     }
 
@@ -328,11 +300,11 @@ public class Worker implements AutoCloseable, WorkingContext {
         return Executor.testUntil(() -> isAjaxDone(), timeoutMills);
     }
 
-    public Boolean waitAjaxDone(){
+    public Boolean waitAjaxDone() {
         return waitAjaxDone(DefaultPageReadyTimeoutMills);
     }
 
-//    @Override
+    //    @Override
     public void invalidate() {
     }
 
@@ -350,8 +322,8 @@ public class Worker implements AutoCloseable, WorkingContext {
             String driverDesc = driver.toString();
             driver.close();
             Logger.V("Driver '%s' is closed successfully.", driverDesc);
-        } catch(Exception ex) {
-            Logger.V(ex);
+        } catch (Exception ex) {
+            Logger.W(ex);
             driver.quit();
         }
     }
@@ -374,7 +346,7 @@ public class Worker implements AutoCloseable, WorkingContext {
                     Logger.V(e);
                 }
             }
-        }while (LocalDateTime.now().isBefore(timeout));
+        } while (LocalDateTime.now().isBefore(timeout));
         return false;
     }
 
@@ -387,20 +359,16 @@ public class Worker implements AutoCloseable, WorkingContext {
     }
 
     public String getElementAttribute(WebElement element, String attributeName) {
-        try{
-            if(element == null)
+        try {
+            if (element == null)
                 throw new NullPointerException("Element is null");
-            if(StringUtils.isBlank(attributeName))
-                throw  new IllegalArgumentException("Attribute Name cannot be null or empty.");
+            if (StringUtils.isBlank(attributeName))
+                throw new IllegalArgumentException("Attribute Name cannot be null or empty.");
             return element.getAttribute(attributeName);
         } catch (Exception ex) {
             Logger.W(ex.getMessage());
             return null;
         }
-    }
-
-    public Worker getWorker() {
-        return this;
     }
 
     public List<WebElement> findElements(By by) {
@@ -447,4 +415,143 @@ public class Worker implements AutoCloseable, WorkingContext {
     public Boolean isEnabled(WebElement e) {
         return !isDisabled(e);
     }
+
+    public UIObject getRoot() {
+        return new UIObject(this, RootBy);
+    }
+
+    public Path saveAsHtml(File file) {
+        return saveAsHtml(file, null);
+    }
+
+    public Path saveAsHtml(File file, UIObject contentObject) {
+        return saveAsHtml(file, contentObject,
+                new UIObject.Collection(contentObject==null? getRoot() : contentObject, By.cssSelector("img")),
+                new UIObject.Collection(contentObject==null? getRoot() : contentObject, By.cssSelector("a"))
+        );
+    }
+
+    private final Map<String, String> tokens = new HashMap<>();
+    public Path saveAsHtml(File file, UIObject contentObject, UICollection... toBeReplaced) {
+        waitAjaxDone(60*1000);
+
+        String contentHtml = (contentObject == null ? getRoot() : contentObject).getOuterHTML();
+        String currentUrl = driver.getCurrentUrl();
+        URL baseUrl = null;
+        try {
+            baseUrl = new URL(currentUrl);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+        if (!tokens.containsKey(currentUrl)) {
+            String filename = file.getName();
+            tokens.put(currentUrl, filename);
+        }
+
+        List<String> knownUrls = mappedURLs.isEmpty() ? null : StringExtensions.sortedListByLengthDesc(mappedURLs.keySet());
+
+        for (UICollection collection : toBeReplaced) {
+            List children = collection == null ? null : collection.getChildren();
+            if (children == null)
+                continue;
+            for (Object child : collection.getChildren()) {
+                UIObject uiObject = (UIObject) child;
+                String tagname = uiObject.getTagName();
+                if (StringUtils.equalsIgnoreCase(tagname, "img")) {
+                    String src = uiObject.getAttribute("src");
+                    if(src == null)
+                        continue;
+                    if (!tokens.containsKey(src)) {
+                        String base64 = uiObject.executeScript(getImageBase64).toString();
+                        tokens.put(src, base64);
+                    }
+                } else if (StringUtils.equalsIgnoreCase(tagname, "a")) {
+                    String href = uiObject.getAttribute("href");
+                    if(href == null)
+                        continue;
+                    String absoluteUrl = null;
+                    try {
+                        URL aUrl = new URL(baseUrl, href);
+                        absoluteUrl = aUrl.getPath();
+                    } catch (MalformedURLException e) {
+                        e.printStackTrace();
+                    }
+                    if(absoluteUrl != null && knownUrls != null) {
+                        String matched = StringExtensions.firstStartsWith(absoluteUrl, knownUrls);
+                        if (matched == null) {
+                            String newFilename = uiObject.getTextContent().trim() + ".html";
+                            tokens.put(href, newFilename);
+                        } else {
+                            String newLink = href.replace(matched, tokens.get(matched) + "/");
+                            tokens.put(href, newLink);
+                        }
+                        continue;
+                    }
+
+                    if (!tokens.containsKey(href)) {
+                        String newFilename = uiObject.getAllText().trim() + ".html";
+                        tokens.put(href, newFilename);
+                    }
+                }
+            }
+        }
+
+        String replacement = StringExtensions.replaceAll(contentHtml, tokens);
+
+        String html;
+        if (contentObject != null) {
+            UIObject root = getRoot();
+            html = root.getOuterHTML();
+            int startIndex = html.indexOf("<", html.indexOf("<body") + 1);
+            int endIndex = html.lastIndexOf(">", html.lastIndexOf("</body>")) + 1;
+            html = html.substring(0, startIndex) + replacement + html.substring(endIndex);
+        } else {
+            html = replacement;
+        }
+        try {
+            Path path = Files.write(file.toPath(), html.getBytes());
+            final URL startUrl = baseUrl;
+            tokens.forEach((k, v)->{
+                try {
+                    URL aUrl = new URL(startUrl, k);
+                    mappedURLs.put(aUrl.getPath(), v);
+                }catch (Exception e){
+                }
+            });
+            Logger.I("%s is saved as %s.", currentUrl, path);
+            return path;
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+
+    public String asHtmlElement(UIObject object, boolean replaceImageToBase64) {
+        String objectHtml = object.getOuterHTML();
+        int startIndex, endIndex;
+        if (replaceImageToBase64) {
+            UIObject.Collection images = new UIObject.Collection(object, By.cssSelector("img"));
+            for (UIObject image : images.getChildren()) {
+                String base64 = image.executeScript(getImageBase64).toString();
+                if (base64 == null || base64.length() == 0) {
+                    Logger.W("Failed to replace " + image);
+                    continue;
+                }
+                String imageHtml = image.getOuterHTML();
+                startIndex = imageHtml.indexOf("src=");
+                startIndex = StringExtensions.indexOfAny(imageHtml, startIndex, '"', '\'');
+                endIndex = imageHtml.indexOf(imageHtml.charAt(startIndex), startIndex + 1);
+                String replacement = imageHtml.substring(0, startIndex + 1) + base64 + imageHtml.substring(endIndex);
+                objectHtml = objectHtml.replace(imageHtml, replacement);
+            }
+        }
+
+        UIObject root = getRoot();
+        String html = root.getOuterHTML();
+        startIndex = html.indexOf("<", html.indexOf("<body") + 1);
+        endIndex = html.lastIndexOf(">", html.lastIndexOf("</body>")) + 1;
+        html = html.substring(0, startIndex) + objectHtml + html.substring(endIndex);
+        return html;
+    }
+
+
 }
