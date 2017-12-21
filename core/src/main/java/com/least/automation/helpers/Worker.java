@@ -187,7 +187,7 @@ public class Worker implements AutoCloseable, WorkingContext {
 
     public String gotoUrl(String url) {
         driver.get(url);
-        waitAjaxDone(60*1000);
+        waitPageReady(60*1000);
         String currentUrl = driver.getCurrentUrl();
         Logger.I("get to: " + currentUrl);
         return currentUrl;
@@ -433,7 +433,7 @@ public class Worker implements AutoCloseable, WorkingContext {
 
     private final Map<String, String> tokens = new HashMap<>();
     public Path saveAsHtml(File file, UIObject contentObject, UICollection... toBeReplaced) {
-        waitAjaxDone(60*1000);
+        waitPageReady(60*1000);
 
         String contentHtml = (contentObject == null ? getRoot() : contentObject).getOuterHTML();
         String currentUrl = driver.getCurrentUrl();
@@ -442,10 +442,6 @@ public class Worker implements AutoCloseable, WorkingContext {
             baseUrl = new URL(currentUrl);
         } catch (MalformedURLException e) {
             e.printStackTrace();
-        }
-        if (!tokens.containsKey(currentUrl)) {
-            String filename = file.getName();
-            tokens.put(currentUrl, filename);
         }
 
         List<String> knownUrls = mappedURLs.isEmpty() ? null : StringExtensions.sortedListByLengthDesc(mappedURLs.keySet());
@@ -456,6 +452,9 @@ public class Worker implements AutoCloseable, WorkingContext {
                 continue;
             for (Object child : collection.getChildren()) {
                 UIObject uiObject = (UIObject) child;
+                if (uiObject == null){
+                    uiObject.invalidate();
+                }
                 String tagname = uiObject.getTagName();
                 if (StringUtils.equalsIgnoreCase(tagname, "img")) {
                     String src = uiObject.getAttribute("src");
@@ -471,10 +470,11 @@ public class Worker implements AutoCloseable, WorkingContext {
                         continue;
                     String absoluteUrl = null;
                     try {
+                        URL asUrl = new URL(href);
                         URL aUrl = new URL(baseUrl, href);
                         absoluteUrl = aUrl.getPath();
                     } catch (MalformedURLException e) {
-                        e.printStackTrace();
+                        continue;
                     }
                     if(absoluteUrl != null && knownUrls != null) {
                         String matched = StringExtensions.firstStartsWith(absoluteUrl, knownUrls);
@@ -482,8 +482,9 @@ public class Worker implements AutoCloseable, WorkingContext {
                             String newFilename = uiObject.getTextContent().trim() + ".html";
                             tokens.put(href, newFilename);
                         } else {
-                            String newLink = href.replace(matched, tokens.get(matched) + "/");
-                            tokens.put(href, newLink);
+                            String newLink = href.replace(matched, mappedURLs.get(matched));
+                            if(!href.contentEquals(newLink))
+                                tokens.put(href, newLink);
                         }
                         continue;
                     }
@@ -514,7 +515,9 @@ public class Worker implements AutoCloseable, WorkingContext {
             tokens.forEach((k, v)->{
                 try {
                     URL aUrl = new URL(startUrl, k);
-                    mappedURLs.put(aUrl.getPath(), v);
+                    String key = aUrl.getPath();
+                    if(!mappedURLs.containsKey(key))
+                        mappedURLs.put(key, v);
                 }catch (Exception e){
                 }
             });

@@ -27,9 +27,10 @@ public class SearchScreen extends Screen {
     public String searchBook(String bookname){
         waitScreenVisible();
         search.enterByScript(bookname);
-        searchButton.click(3000);
+        searchButton.click(3*1000);
 
         resultItem firstResult = resultItems.getChildren().get(0);
+        firstResult.waitPageReady();
         String bookTitle = firstResult.bookTitle.getAllText().trim();
         if(!StringExtensions.containsAllIgnoreCase(bookTitle, bookname)){
             return null;

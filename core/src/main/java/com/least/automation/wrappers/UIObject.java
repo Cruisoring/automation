@@ -286,6 +286,7 @@ public class UIObject implements IUIObject {
     }
 
     public String getTagName() {
+
         return getElement().getTagName();
     }
 
@@ -555,9 +556,13 @@ public class UIObject implements IUIObject {
     }
 
     @Override
-    public boolean click(int ajaxWaitMills){
+    public boolean click(int waitReadyMills){
         click();
-        return (ajaxWaitMills > 0) && worker.waitAjaxDone(ajaxWaitMills);
+        if(waitReadyMills > 0) {
+            sleep(3000);
+            return worker.waitPageReady(waitReadyMills);
+        }
+        return false;
     }
 
     public void click(OnElement position) {

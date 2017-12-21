@@ -28,14 +28,14 @@ public class ViewScreen extends Screen {
 
     public final UIObject detailBook;
     public final UIObject.Collection topics;
-    public final UIObject.Collection links;
+//    public final UIObject.Collection links;
     public URL baseUrl;
 
     public ViewScreen(Worker worker){
         super(worker);
         detailBook = new UIObject(this, By.cssSelector("section[role='document'], section.detail-book"));
         topics = new UIObject.Collection(detailBook, By.cssSelector("li[class^='toc-level']>a"));
-        links = new UIObject.Collection(detailBook, By.cssSelector("a"));
+//        links = new UIObject.Collection(detailBook, By.cssSelector("a"));
     }
 
     public String saveIndex(Path folderPath){
@@ -65,7 +65,9 @@ public class ViewScreen extends Screen {
         worker.gotoUrl(topicUrl);
         waitPageReady();
 
-        Path saved = worker.saveAsHtml(file, detailBook, links, new UICollection(detailBook, By.cssSelector("img")));
+        Path saved = worker.saveAsHtml(file, detailBook,
+                new UIObject.Collection(detailBook, By.cssSelector("a")),
+                new UICollection(detailBook, By.cssSelector("img")));
         return saved != null;
     }
 
@@ -127,7 +129,9 @@ public class ViewScreen extends Screen {
         waitPageReady();
 
         File topicFile = new File(folderPath.toFile(), filename);
-        Path saved = worker.saveAsHtml(topicFile, detailBook, links, new UICollection(detailBook, By.cssSelector("img")));
+        Path saved = worker.saveAsHtml(topicFile, detailBook,
+                new UIObject.Collection(detailBook, By.cssSelector("a")),
+                new UICollection(detailBook, By.cssSelector("img")));
         return saved.toString();
     }
 }

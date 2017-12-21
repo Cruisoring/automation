@@ -124,7 +124,7 @@ public class Logger {
             case "debug":
                 return 3;
             case "info":
-                return 0;
+                return -3;
             case "warning":
                 return 0;
             case "error":
@@ -192,8 +192,8 @@ public class Logger {
 
     //TODO: check availability of RxJava, or replace with Observable<Message> instead?
     static final Logger OnlyDefaultLogger = new Logger(System.out::println,
-//            LogLevel.verbose,
-//            LogLevel.debug,
+            LogLevel.verbose,
+            LogLevel.debug,
             LogLevel.info, LogLevel.warning, LogLevel.error);
 
     public static Timer M(){
