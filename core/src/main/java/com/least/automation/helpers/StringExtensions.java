@@ -11,33 +11,108 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 public class StringExtensions {
-
+    public static final String RegexSpecialCharacters = "[\\^$.|?*+(){}";
+    public static final Pattern escapeCharsPattern = Pattern.compile("(\\[|\\\\|\\^|\\$|\\.|\\||\\?|\\*|\\+|\\(|\\)|\\{|\\})");
     public static final Function<Object, String[]> defaultToStringForms = o -> new String[]{o.toString()};
     public static final BiPredicate<String, String> contains = (s, k) -> StringUtils.contains(s, k);
     public static final BiPredicate<String, String> containsIgnoreCase = (s, k) -> StringUtils.containsIgnoreCase(s, k);
 
+    public static final Pattern simpleTableRowPattern = Pattern.compile("<tbody></tbody>");
+    public static final Pattern linkPattern = Pattern.compile("<a[^>]*>[\\s\\S]*?</a>");
+    public static final Pattern imagePattern = Pattern.compile("<img[^>]*?>");
+
     public static final String NewLine = System.getProperty("line.separator");
+    public static final String attributeValueEnclosingChars = "\"'";
+    public static final String attributePatternTemplate = "%s%c^%s([^%c]*?)%s";
 
-    public static String extractHtmlText(String html) {
-        if (html == null) return null;
+    public static final Map<String, Pattern> attributeRetrievePatterns = new HashMap<>();
 
-        String result = html.replaceAll("\\b(?!value)([-|_|\\w]+)=\\\"[^*]*?\\\"", "");
+    public static Pattern getAttributePattern(String leadingKey, String enclosingChars){
+        String mapKey = leadingKey + enclosingChars;
+        if (attributeRetrievePatterns.containsKey(mapKey))
+            return attributeRetrievePatterns.get(mapKey);
+
+        List<String> subs = new ArrayList<>();
+        for(int i=0; i<enclosingChars.length(); i++){
+            char ch = enclosingChars.charAt(i);
+            String splitter = String.format((RegexSpecialCharacters.indexOf(ch) == -1) ? "%s" : "\\%s", ch);
+            String sub = String.format(attributePatternTemplate, leadingKey, ch, splitter, ch, splitter);
+            subs.add(sub);
+        }
+        String patternString = String.join("|", subs);
+        Pattern pattern = Pattern.compile(patternString);
+        attributeRetrievePatterns.put(mapKey, pattern);
+        return pattern;
+    }
+
+    public static Pattern getAttributePattern(String leadingKey){
+        return getAttributePattern(leadingKey, attributeValueEnclosingChars);
+    }
+
+
+    public static String valueOfAttribute(String template, String attributeName){
+        attributeName = attributeName.endsWith("=") ? attributeName : attributeName+"=";
+        Pattern pattern = getAttributePattern(attributeName);
+        Matcher matcher = pattern.matcher(template);
+        if (matcher.find()) {
+            for (int i = 1; i < matcher.groupCount(); i++) {
+                String result = matcher.group(i);
+                if(result != null) return result;
+            }
+        }
+        return null;
+    }
+
+    public static String escapeRegexChars(String template){
+        Matcher matcher = escapeCharsPattern.matcher(template);
+
+        StringBuffer sb = new StringBuffer();
+        while (matcher.find()) {
+            matcher.appendReplacement(sb, "\\" + matcher.group(1));
+        }
+        matcher.appendTail(sb);
+        return sb.toString();
+    }
+
+    public static String replaceAll(String template, Map<String, String> tokens) {
+        // Create pattern of the format "%(token0|token1|...)%"
+        Object[] quotedKeys = tokens.keySet().stream().map(s -> escapeRegexChars(s)).toArray();
+        String patternString = String.format("(%s)", StringUtils.join(quotedKeys, '|'));
+        Pattern pattern = Pattern.compile(patternString);
+        Matcher matcher = pattern.matcher(template);
+
+        StringBuffer sb = new StringBuffer();
+        while (matcher.find()) {
+            matcher.appendReplacement(sb, tokens.get(matcher.group(1)));
+        }
+        matcher.appendTail(sb);
+        return sb.toString();
+    }
+
+    public static List<String> sortedListOf(Collection<String> strings, Comparator<String> comparator){
+        List<String> list = (strings instanceof List) ? (List<String>)strings : new ArrayList<>(strings);
+        Collections.sort(list, comparator);
+        return list;
+    }
+
+    public static String extractHtmlText(String template) {
+        if (template == null) return null;
+
+        String result = template.replaceAll("\\b(?!value)([-|_|\\w]+)=\\\"[^*]*?\\\"", "");
         result = result.replaceAll("<input\\W+[^>]*value=\\\"([^\"]*)\\\"[^\\>]*>", "$1");
         String unescaped = StringEscapeUtils.unescapeHtml4(result);
         result = unescaped.replaceAll("<[^>]*>", "");
         return result;
     }
 
-    public static List<String> getSegments(String html, Pattern pattern) {
+    public static List<String> getSegments(String template, Pattern pattern) {
         List<String> allMatches = new ArrayList<>();
-        Matcher m = pattern.matcher(html);
+        Matcher m = pattern.matcher(template);
         while (m.find()) {
             allMatches.add(m.group());
         }
         return allMatches;
     }
-
-    public static final Pattern simpleTableRowPattern = Pattern.compile("<tbody></tbody>");
 
     private static final Boolean matchAny(BiPredicate<String, String> matcher, String context, String[] keys) {
         if (context == null) return false;
@@ -104,42 +179,6 @@ public class StringExtensions {
 
         return Arrays.stream(keys).map(k -> context.indexOf(k.toString(), fromIndex))
                 .filter(i -> i != -1).min(Integer::min).orElse(-1);
-    }
-
-    public static final Pattern escapeCharsPattern = Pattern.compile("(\\[|\\\\|\\^|\\$|\\.|\\||\\?|\\*|\\+|\\(|\\)|\\{|\\})");
-    public static String escapeRegexChars(String template){
-        Matcher matcher = escapeCharsPattern.matcher(template);
-
-        StringBuffer sb = new StringBuffer();
-        while (matcher.find()) {
-            matcher.appendReplacement(sb, "");
-            sb.append("\\" + matcher.group(1));
-        }
-        matcher.appendTail(sb);
-        return sb.toString();
-    }
-
-    public static String replaceAll(String template, Map<String, String> tokens) {
-        // Create pattern of the format "%(token0|token1|...)%"
-        Object[] quotedKeys = tokens.keySet().stream().map(s -> escapeRegexChars(s)).toArray();
-        String patternString = String.format("(%s)", StringUtils.join(quotedKeys, '|'));
-        Pattern pattern = Pattern.compile(patternString);
-        Matcher matcher = pattern.matcher(template);
-
-        StringBuffer sb = new StringBuffer();
-        while (matcher.find()) {
-            matcher.appendReplacement(sb, "");
-            String replacement= tokens.get(matcher.group(1));
-            sb.append(replacement);
-        }
-        matcher.appendTail(sb);
-        return sb.toString();
-    }
-
-    public static List<String> sortedListOf(Collection<String> strings, Comparator<String> comparator){
-        List<String> list = (strings instanceof List) ? (List<String>)strings : new ArrayList<>(strings);
-        Collections.sort(list, comparator);
-        return list;
     }
 
     public static List<String> sortedListByLength(Collection<String> strings){

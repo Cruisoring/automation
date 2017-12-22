@@ -4,7 +4,6 @@ import com.least.automation.enums.DriverType;
 import com.least.automation.enums.ReadyState;
 import com.least.automation.interfaces.WorkingContext;
 import com.least.automation.wrappers.Screen;
-import com.least.automation.wrappers.UICollection;
 import com.least.automation.wrappers.UIObject;
 import org.apache.commons.lang3.StringUtils;
 import org.openqa.selenium.*;
@@ -15,11 +14,6 @@ import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
 
-import java.io.File;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -30,10 +24,10 @@ import java.util.function.Consumer;
 public class Worker implements AutoCloseable, WorkingContext {
     public final static String FrameIndicator = ">";
     public final static String RootFramePath = "";
-    public final static By RootBy = By.tagName("html");
-    public final static By BodyBy = By.tagName("body");
-    public final static By HtmlTitleBy = By.tagName("head>title");
-
+//    public final static By RootBy = By.tagName("html");
+//    public final static By BodyBy = By.tagName("body");
+//    public final static By HtmlTitleBy = By.tagName("head>title");
+//
     public static final String DefaultMatchingHighlightScript = "var e=arguments[0]; e.style.color='teal';e.style.backgroundColor='green';";
     public static final String DefaultContainingHighlightScript = "var e=arguments[0]; e.style.color='olive';e.style.backgroundColor='orange';";
     public static final String DefaultMismatchHighlightScript = "var e=arguments[0]; e.style.color='fuchsia';e.style.backgroundColor='red';";
@@ -411,150 +405,5 @@ public class Worker implements AutoCloseable, WorkingContext {
             return true;
         }
     }
-
-    public Boolean isEnabled(WebElement e) {
-        return !isDisabled(e);
-    }
-
-    public UIObject getRoot() {
-        return new UIObject(this, RootBy);
-    }
-
-    public Path saveAsHtml(File file) {
-        return saveAsHtml(file, null);
-    }
-
-    public Path saveAsHtml(File file, UIObject contentObject) {
-        return saveAsHtml(file, contentObject,
-                new UIObject.Collection(contentObject==null? getRoot() : contentObject, By.cssSelector("img")),
-                new UIObject.Collection(contentObject==null? getRoot() : contentObject, By.cssSelector("a"))
-        );
-    }
-
-    private final Map<String, String> tokens = new HashMap<>();
-    public Path saveAsHtml(File file, UIObject contentObject, UICollection... toBeReplaced) {
-        waitPageReady(60*1000);
-
-        String contentHtml = (contentObject == null ? getRoot() : contentObject).getOuterHTML();
-        String currentUrl = driver.getCurrentUrl();
-        URL baseUrl = null;
-        try {
-            baseUrl = new URL(currentUrl);
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
-
-        List<String> knownUrls = mappedURLs.isEmpty() ? null : StringExtensions.sortedListByLengthDesc(mappedURLs.keySet());
-
-        for (UICollection collection : toBeReplaced) {
-            List children = collection == null ? null : collection.getChildren();
-            if (children == null)
-                continue;
-            for (Object child : collection.getChildren()) {
-                UIObject uiObject = (UIObject) child;
-                if (uiObject == null){
-                    uiObject.invalidate();
-                }
-                String tagname = uiObject.getTagName();
-                if (StringUtils.equalsIgnoreCase(tagname, "img")) {
-                    String src = uiObject.getAttribute("src");
-                    if(src == null)
-                        continue;
-                    if (!tokens.containsKey(src)) {
-                        String base64 = uiObject.executeScript(getImageBase64).toString();
-                        tokens.put(src, base64);
-                    }
-                } else if (StringUtils.equalsIgnoreCase(tagname, "a")) {
-                    String href = uiObject.getAttribute("href");
-                    if(href == null)
-                        continue;
-                    String absoluteUrl = null;
-                    try {
-                        URL asUrl = new URL(href);
-                        URL aUrl = new URL(baseUrl, href);
-                        absoluteUrl = aUrl.getPath();
-                    } catch (MalformedURLException e) {
-                        continue;
-                    }
-                    if(absoluteUrl != null && knownUrls != null) {
-                        String matched = StringExtensions.firstStartsWith(absoluteUrl, knownUrls);
-                        if (matched == null) {
-                            String newFilename = uiObject.getTextContent().trim() + ".html";
-                            tokens.put(href, newFilename);
-                        } else {
-                            String newLink = href.replace(matched, mappedURLs.get(matched));
-                            if(!href.contentEquals(newLink))
-                                tokens.put(href, newLink);
-                        }
-                        continue;
-                    }
-
-                    if (!tokens.containsKey(href)) {
-                        String newFilename = uiObject.getAllText().trim() + ".html";
-                        tokens.put(href, newFilename);
-                    }
-                }
-            }
-        }
-
-        String replacement = StringExtensions.replaceAll(contentHtml, tokens);
-
-        String html;
-        if (contentObject != null) {
-            UIObject root = getRoot();
-            html = root.getOuterHTML();
-            int startIndex = html.indexOf("<", html.indexOf("<body") + 1);
-            int endIndex = html.lastIndexOf(">", html.lastIndexOf("</body>")) + 1;
-            html = html.substring(0, startIndex) + replacement + html.substring(endIndex);
-        } else {
-            html = replacement;
-        }
-        try {
-            Path path = Files.write(file.toPath(), html.getBytes());
-            final URL startUrl = baseUrl;
-            tokens.forEach((k, v)->{
-                try {
-                    URL aUrl = new URL(startUrl, k);
-                    String key = aUrl.getPath();
-                    if(!mappedURLs.containsKey(key))
-                        mappedURLs.put(key, v);
-                }catch (Exception e){
-                }
-            });
-            Logger.I("%s is saved as %s.", currentUrl, path);
-            return path;
-        } catch (Exception ex) {
-            return null;
-        }
-    }
-
-    public String asHtmlElement(UIObject object, boolean replaceImageToBase64) {
-        String objectHtml = object.getOuterHTML();
-        int startIndex, endIndex;
-        if (replaceImageToBase64) {
-            UIObject.Collection images = new UIObject.Collection(object, By.cssSelector("img"));
-            for (UIObject image : images.getChildren()) {
-                String base64 = image.executeScript(getImageBase64).toString();
-                if (base64 == null || base64.length() == 0) {
-                    Logger.W("Failed to replace " + image);
-                    continue;
-                }
-                String imageHtml = image.getOuterHTML();
-                startIndex = imageHtml.indexOf("src=");
-                startIndex = StringExtensions.indexOfAny(imageHtml, startIndex, '"', '\'');
-                endIndex = imageHtml.indexOf(imageHtml.charAt(startIndex), startIndex + 1);
-                String replacement = imageHtml.substring(0, startIndex + 1) + base64 + imageHtml.substring(endIndex);
-                objectHtml = objectHtml.replace(imageHtml, replacement);
-            }
-        }
-
-        UIObject root = getRoot();
-        String html = root.getOuterHTML();
-        startIndex = html.indexOf("<", html.indexOf("<body") + 1);
-        endIndex = html.lastIndexOf(">", html.lastIndexOf("</body>")) + 1;
-        html = html.substring(0, startIndex) + objectHtml + html.substring(endIndex);
-        return html;
-    }
-
 
 }

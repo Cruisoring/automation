@@ -1,4 +1,4 @@
-import com.least.automation.helpers.Logger;
+import com.least.automation.helpers.BookHelper;
 import com.least.automation.helpers.ResourceHelper;
 import com.least.automation.helpers.Worker;
 import org.testng.Assert;
@@ -7,8 +7,8 @@ import screens.LoginScreen;
 import screens.SearchScreen;
 import screens.ViewScreen;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Properties;
 
 @Test
@@ -53,12 +53,22 @@ public class saveBookTests {
         boolean loginSuccess= worker.getScreen(LoginScreen.class).login();
         Assert.assertTrue(loginSuccess);
 
-        Path folderPath = Paths.get(saveLocation, bookname);
+        URL url = null;
+        try {
+            url = new URL(worker.driver.getCurrentUrl());
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+        BookHelper bookHelper = new BookHelper(url, worker);
+        ViewScreen viewScreen = worker.getScreen(ViewScreen.class);
+        bookHelper.saveIndex(bookname, viewScreen.topics);
 
-        bookScreen.saveIndex(folderPath);
-
-        int count = bookScreen.saveAllTopics(folderPath);
-        Logger.I("There are %d topics saved successfully.", count);
-//        bookScreen.saveTopic(bookScreen.topics.get(20), folderPath);
+//        Path folderPath = Paths.get(saveLocation, bookname);
+//
+//        bookScreen.saveIndex(folderPath);
+//
+//        int count = bookScreen.saveAllTopics(folderPath);
+//        Logger.I("There are %d topics saved successfully.", count);
+////        bookScreen.saveTopic(bookScreen.topics.get(20), folderPath);
     }
 }

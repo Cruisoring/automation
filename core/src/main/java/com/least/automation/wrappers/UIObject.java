@@ -3,9 +3,8 @@ package com.least.automation.wrappers;
 import com.least.automation.enums.OnElement;
 import com.least.automation.helpers.Executor;
 import com.least.automation.helpers.Logger;
-import com.least.automation.helpers.Worker;
 import com.least.automation.helpers.StringExtensions;
-
+import com.least.automation.helpers.Worker;
 import com.least.automation.interfaces.IUIObject;
 import com.least.automation.interfaces.WorkingContext;
 import org.openqa.selenium.*;
@@ -15,6 +14,7 @@ import org.openqa.selenium.interactions.internal.Locatable;
 
 import java.util.List;
 import java.util.function.BooleanSupplier;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
@@ -40,6 +40,7 @@ public class UIObject implements IUIObject {
     protected static int DefaultGetElementRetryAttempts = 3;
     protected static int DefaultRetryIntervalMills = 50;
     protected static int DefaultWaitEnabledMills = 3*1000;
+    protected static int DefaultWaitChangesMills = 30*1000;
     protected static int DefaultWaitBeforeEvaluationMills = 3100;
 
     protected static Boolean BypassUnnessaryActions = true;
@@ -206,6 +207,29 @@ public class UIObject implements IUIObject {
 
     public Boolean waitCondition(BooleanSupplier predicate, int waitTimeoutMills) {
         return Executor.testUntil(()-> predicate.getAsBoolean(), waitTimeoutMills);
+    }
+
+    public <T extends Object> Boolean waitChanges(Function<UIObject, T> propertyExtractor){
+        return waitChanges(propertyExtractor, null, DefaultWaitChangesMills);
+    }
+
+    public <T extends Object> Boolean waitChanges(Function<UIObject, T> propertyExtractor, Predicate<T> predicate){
+        return waitChanges(propertyExtractor, predicate, DefaultWaitChangesMills);
+    }
+
+    public <T extends Object> Boolean waitChanges(Function<UIObject, T> propertyExtractor, Predicate<T> predicate, int waitTimeoutMills){
+        T originalProperty = null;
+        try {
+            originalProperty = propertyExtractor.apply(this);
+        }catch(Exception e){}
+
+        if(predicate == null){
+            T finalOriginalProperty = originalProperty;
+            predicate = t -> !t.equals(finalOriginalProperty);
+        }
+
+        Predicate<T> finalPredicate = predicate;
+        return Executor.testUntil(()-> finalPredicate.test(propertyExtractor.apply(this)), waitTimeoutMills);
     }
 
     public Boolean waitDisplayed(int waitDisplayedMills) {
@@ -559,7 +583,7 @@ public class UIObject implements IUIObject {
     public boolean click(int waitReadyMills){
         click();
         if(waitReadyMills > 0) {
-            sleep(3000);
+            sleep(1000);
             return worker.waitPageReady(waitReadyMills);
         }
         return false;
@@ -616,6 +640,10 @@ public class UIObject implements IUIObject {
         }
 
         return this.getFreshElement().equals(another.getFreshElement());
+    }
+
+    public String asBase64(){
+        return this.executeScript(Worker.getImageBase64).toString();
     }
 
     @Override

@@ -59,4 +59,15 @@ public class MapHelper {
         }
         return map.get(matched);
     }
+
+    public static <K,V> Map<V,K> getReversedMap(Map<K,V> map){
+        Map<V,K> result = map.keySet().stream()
+                .filter(k -> map.get(k) != null)
+                .distinct()
+                .collect(Collectors.toMap(
+                        k-> map.get(k),
+                        k -> k
+                ));
+        return result;
+    }
 }
