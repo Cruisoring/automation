@@ -1,5 +1,6 @@
 package com.least.automation.helpers;
 
+import com.least.automation.wrappers.UICollection;
 import com.least.automation.wrappers.UIObject;
 import org.openqa.selenium.By;
 
@@ -90,7 +91,8 @@ public class BookHelper {
     private final URL rootUrl;
     private final Function<String, String> filenameGenerator;
     private final UIObject rootObject;
-    private final Map<URL, String> mappedURLs = new HashMap<>();
+    private final Map<String, String> mappedURLs = new HashMap<>();
+    Path bookPath;
 
     public BookHelper(URL rootUrl, Worker worker, Function<String, String> filenameGenerator){
         if(worker == null || rootUrl == null)
@@ -120,11 +122,12 @@ public class BookHelper {
         return saveIndex(bookname, null, null);
     }
 
-    public Path saveIndex(String bookname, UIObject content){
+    public Path saveIndex(String bookname, UIObject.Collection content){
         return saveIndex(bookname, content, null);
     }
 
-    public Path saveIndex(String bookname, UIObject content, String indexFilename){
+    //TODO: using Pattern instead of UICollection ?
+    public Path saveIndex(String bookname, UIObject.Collection content, String indexFilename){
         Path bookRoot = Paths.get(booksDirectory.toString(), bookname);
         if (!Files.exists(bookRoot)){
             try {
@@ -135,13 +138,24 @@ public class BookHelper {
         }
         indexFilename = filenameGenerator.apply(indexFilename == null ? bookname : indexFilename);
         File file = new File(bookRoot.toFile(), indexFilename);
-        content = content == null ? rootObject : content;
-        String contentHtml = content.getOuterHTML();
-        String reLinkedHtml = getRelinkedHtml(contentHtml, true);
+        content = content == null ? new UIObject.Collection(rootObject, linkBy) : content;
+        String reLinkedHtml = getRelinkedHtml(content, true);
+//        if(!mappedURLs.containsKey(rootUrl))
+//            mappedURLs.put(rootUrl, indexFilename);
 
         Map<String, String> imageTokens = getImageTokens(content);
         String replacement = StringExtensions.replaceAll(reLinkedHtml, imageTokens);
 
+        String html = replacedHtml(content, replacement);
+        try {
+            bookPath = Files.write(file.toPath(), html.getBytes());
+            return bookPath;
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+
+    private String replacedHtml(UIObject content, String replacement) {
         String html;
         if (content != rootObject) {
             html = rootObject.getOuterHTML();
@@ -151,12 +165,7 @@ public class BookHelper {
         } else {
             html = replacement;
         }
-        try {
-            Path path = Files.write(file.toPath(), html.getBytes());
-            return path;
-        } catch (Exception ex) {
-            return null;
-        }
+        return html;
     }
 
     private Map<String,String> getImageTokens(UIObject content) {
@@ -181,16 +190,18 @@ public class BookHelper {
         return tokens;
     }
 
-    private String getRelinkedHtml(String html, boolean alwaysMap) {
-        List<String> linkElements = StringExtensions.getSegments(html, StringExtensions.linkPattern);
-        Map<String, String> elementHrefMap = linkElements.stream()
-                .collect(Collectors.toMap(
-                        element -> element,
-                        element -> StringExtensions.valueOfAttribute((String)element, "href")
-                ));
-        Map<String, String> hrefElementMap = MapHelper.getReversedMap(elementHrefMap);
+    private String getRelinkedHtml(UIObject.Collection links, boolean alwaysMap) {
+        Map<String, String> hrefTitleMap = new HashMap<>();
+        for (UIObject link : links.getChildren()) {
+            String href = link.getAttribute("href");
+            if(!hrefTitleMap.containsKey(href)){
+                String title = link.getAllText().trim();
+                hrefTitleMap.put(href, title);
+            }
+        }
 
-        Map<String, URL> urlMap = hrefElementMap.keySet().stream().collect(Collectors.toMap(
+        Map<String, URL> urlMap = hrefTitleMap.keySet().stream()
+                .collect(Collectors.toMap(
                 href -> href,
                 href -> getUrl((String)href)
         ));
@@ -203,15 +214,64 @@ public class BookHelper {
                 continue;
 
             if(!mappedURLs.containsKey(entryUrl) && alwaysMap){
-                String element = hrefElementMap.get(entry.getKey());
-                String title = StringExtensions.extractHtmlText(element).trim();
+                String title = hrefTitleMap.get(entry.getKey());
                 title = filenameGenerator.apply(title);
-                mappedURLs.put(entryUrl, title);
+                mappedURLs.put(entryUrl.getPath(), title);
             }
             tokens.put(entry.getKey(), mappedURLs.get(entryUrl));
         }
+        String html = links.getOuterHTML();
         String result = StringExtensions.replaceAll(html, tokens);
         return result;
+    }
+
+    public Path saveChapter(URL chapterUrl, UIObject content){
+        worker.driver.get(chapterUrl.getPath());
+        worker.waitPageReady();
+
+        content = content == null ? rootObject : content;
+        String reLinkedHtml = replaceChapterLinks(content);
+        Map<String, String> imageTokens = getImageTokens(content);
+        String replacement = StringExtensions.replaceAll(reLinkedHtml, imageTokens);
+
+        String html = replacedHtml(content, replacement);
+        File file = new File(bookPath.toFile(), mappedURLs.get(chapterUrl));
+        try {
+            Path path = Files.write(file.toPath(), html.getBytes());
+            return path;
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+
+    private String replaceChapterLinks(UIObject content) {
+        List<String> knownUrls = StringExtensions.sortedListByLengthDesc(
+                mappedURLs.keySet().stream()
+                        .collect(Collectors.toList()));
+        String contentHtml = content.getOuterHTML();
+        List<String> urlElements = StringExtensions.getSegments(contentHtml, StringExtensions.linkPattern);
+        Map<String, URL> urlMap = urlElements.stream()
+                .map(e -> StringExtensions.valueOfAttribute(e, "href"))
+                .collect(Collectors.toMap(
+                        href -> href,
+                        href -> getUrl((String)href)
+                ));
+
+        final String rootUrlPath = rootUrl.getPath();
+        Map<String, String> tokens = new HashMap<>();
+        for (Map.Entry<String, URL> entry : urlMap.entrySet()) {
+            URL entryUrl = entry.getValue();
+            if(!entryUrl.getPath().contains(rootUrlPath))
+                continue;
+
+            String matched = StringExtensions.firstStartsWith(entry.getKey(), knownUrls);
+            URL matchedUrl = getUrl(matched);
+            if (matchedUrl == null) continue;
+            String replacedUrl = entry.getKey().replace(matched, mappedURLs.get(matchedUrl));
+            tokens.put(entry.getKey(), replacedUrl);
+        }
+        String html = content.getOuterHTML();
+        return StringExtensions.replaceAll(html, tokens);
     }
 
 //

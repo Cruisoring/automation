@@ -9,6 +9,7 @@ import screens.ViewScreen;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.List;
 import java.util.Properties;
 
 @Test

@@ -23,7 +23,7 @@ public class StringExtensions {
 
     public static final String NewLine = System.getProperty("line.separator");
     public static final String attributeValueEnclosingChars = "\"'";
-    public static final String attributePatternTemplate = "%s%c^%s([^%c]*?)%s";
+    public static final String attributePatternTemplate = "%s%s([^%c]*?)%s";
 
     public static final Map<String, Pattern> attributeRetrievePatterns = new HashMap<>();
 
@@ -36,7 +36,7 @@ public class StringExtensions {
         for(int i=0; i<enclosingChars.length(); i++){
             char ch = enclosingChars.charAt(i);
             String splitter = String.format((RegexSpecialCharacters.indexOf(ch) == -1) ? "%s" : "\\%s", ch);
-            String sub = String.format(attributePatternTemplate, leadingKey, ch, splitter, ch, splitter);
+            String sub = String.format(attributePatternTemplate, leadingKey, splitter, ch, splitter);
             subs.add(sub);
         }
         String patternString = String.join("|", subs);
