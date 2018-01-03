@@ -30,7 +30,7 @@ public class LoginScreen extends Screen {
         if(!waitScreenVisible())
             return false;
 
-        email.enterByScript("william.jiang@apa.com.au");
+        email.enterByScript("Dave.Greyvenstein@apa.com.au");
         password.enterByScript("p@ssW0rd");
         rememberMe.setChecked(true);
         signInButton.click(100);

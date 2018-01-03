@@ -2,9 +2,7 @@ package com.least.automation.helpers;
 
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -61,13 +59,15 @@ public class MapHelper {
     }
 
     public static <K,V> Map<V,K> getReversedMap(Map<K,V> map){
-        Map<V,K> result = map.keySet().stream()
-                .filter(k -> map.get(k) != null)
-                .distinct()
-                .collect(Collectors.toMap(
-                        k-> map.get(k),
-                        k -> k
-                ));
+        Map<V,K> result = new HashMap<>();
+
+        for (K key : map.keySet()) {
+            V value = map.get(key);
+            if(value==null)
+                continue;
+            result.putIfAbsent(value, key);
+        }
+
         return result;
     }
 }

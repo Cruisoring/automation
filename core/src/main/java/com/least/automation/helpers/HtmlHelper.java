@@ -1,7 +1,7 @@
 package com.least.automation.helpers;
 
-import com.least.automation.wrappers.UICollection;
 import com.least.automation.wrappers.UIObject;
+import org.apache.commons.lang3.StringUtils;
 import org.openqa.selenium.By;
 
 import java.io.File;
@@ -17,7 +17,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class BookHelper {
+public class HtmlHelper {
     public final static By RootBy = By.tagName("html");
     public final static By BodyBy = By.tagName("body");
     public final static By HtmlTitleBy = By.tagName("head>title");
@@ -25,7 +25,7 @@ public class BookHelper {
     public final static By ImageBy = By.tagName("img");
     public static final String DefaultSuffix = ".html";
     public static final Function<String, String> DefaultFilenameGenerator =
-            n -> n.endsWith(DefaultSuffix) ? n : n + DefaultSuffix;
+            filename -> getFilename(filename, DefaultSuffix);
     protected static Path booksDirectory = Paths.get("C:/test/books/");
 
     static {
@@ -36,6 +36,11 @@ public class BookHelper {
                 Logger.I(e);
             }
         }
+    }
+
+    public static String getFilename(String filename, String suffix){
+        filename = filename.trim().replaceAll("\\s+", " ");
+        return (filename.endsWith(suffix)) ? filename : filename + suffix;
     }
 
     public static String replaceImgWithBase64(String html, String source, String base64) {
@@ -60,41 +65,15 @@ public class BookHelper {
     }
 
     public static final Map<URL, String> mappedImages = new HashMap<>();
-//
-//
-//    public static String asHtmlElement(UIObject object){
-//        String objectHtml = object.getOuterHTML();
-//        int startIndex, endIndex;
-//        UIObject.Collection images = new UIObject.Collection(object, By.cssSelector("img"));
-//        for (UIObject image : images.getChildren()) {
-//            String base64 = image.executeScript(getImageBase64).toString();
-//            if (base64 == null || base64.length() == 0){
-//                Logger.W("Failed to replace " + image);
-//                continue;
-//            }
-//            String imageHtml = image.getOuterHTML();
-//            startIndex = imageHtml.indexOf("src=");
-//            startIndex = StringExtensions.indexOfAny(imageHtml, startIndex, '"', '\'');
-//            endIndex = imageHtml.indexOf(imageHtml.charAt(startIndex), startIndex+1);
-//            String replacement = imageHtml.substring(0, startIndex+1) + base64 + imageHtml.substring(endIndex);
-//            objectHtml = objectHtml.replace(imageHtml, replacement);
-//        }
-//
-//        String html = root.getOuterHTML();
-//        startIndex = html.indexOf("<", html.indexOf("<body") + 3);
-//        endIndex = html.lastIndexOf(">", html.lastIndexOf("</body>"))+1;
-//        html = html.substring(0, startIndex) + objectHtml + html.substring(endIndex);
-//        return html;
-//    }
 
     protected final Worker worker;
-    private final URL rootUrl;
+    public final URL rootUrl;
     private final Function<String, String> filenameGenerator;
     private final UIObject rootObject;
-    private final Map<String, String> mappedURLs = new HashMap<>();
-    Path bookPath;
+    public final Map<URL, String> mappedURLs = new HashMap<>();
+    File bookRootFolder;
 
-    public BookHelper(URL rootUrl, Worker worker, Function<String, String> filenameGenerator){
+    public HtmlHelper(URL rootUrl, Worker worker, Function<String, String> filenameGenerator){
         if(worker == null || rootUrl == null)
             throw new ExceptionInInitializerError("Arguments cannot be null.");
 
@@ -104,7 +83,7 @@ public class BookHelper {
         this.rootUrl = rootUrl;
     }
 
-    public BookHelper(URL rootUrl, Worker worker){
+    public HtmlHelper(URL rootUrl, Worker worker){
         this(rootUrl, worker, null);
     }
 
@@ -137,18 +116,19 @@ public class BookHelper {
             }
         }
         indexFilename = filenameGenerator.apply(indexFilename == null ? bookname : indexFilename);
-        File file = new File(bookRoot.toFile(), indexFilename);
+        bookRootFolder = bookRoot.toFile();
+        File file = new File(bookRootFolder, indexFilename);
         content = content == null ? new UIObject.Collection(rootObject, linkBy) : content;
         String reLinkedHtml = getRelinkedHtml(content, true);
-//        if(!mappedURLs.containsKey(rootUrl))
-//            mappedURLs.put(rootUrl, indexFilename);
 
         Map<String, String> imageTokens = getImageTokens(content);
         String replacement = StringExtensions.replaceAll(reLinkedHtml, imageTokens);
 
         String html = replacedHtml(content, replacement);
         try {
-            bookPath = Files.write(file.toPath(), html.getBytes());
+            Path bookPath = Files.write(file.toPath(), html.getBytes());
+            Logger.I("%s of %s is saved as %s", content, bookname, bookPath);
+            mappedURLs.put(rootUrl, indexFilename);
             return bookPath;
         } catch (Exception ex) {
             return null;
@@ -192,83 +172,96 @@ public class BookHelper {
 
     private String getRelinkedHtml(UIObject.Collection links, boolean alwaysMap) {
         Map<String, String> hrefTitleMap = new HashMap<>();
+        final String rootUrlPath = rootUrl.getPath();
         for (UIObject link : links.getChildren()) {
             String href = link.getAttribute("href");
+            URL url = getUrl(href);
+
+            if(href.startsWith("#") || !url.getPath().contains(rootUrlPath))
+                continue;
+
             if(!hrefTitleMap.containsKey(href)){
-                String title = link.getAllText().trim();
-                hrefTitleMap.put(href, title);
+                String title = link.getAllText().trim().replaceAll("\\s+", " ");
+                if(StringUtils.isNotEmpty(title))
+                    hrefTitleMap.put(href, filenameGenerator.apply(title));
             }
         }
 
-        Map<String, URL> urlMap = hrefTitleMap.keySet().stream()
-                .collect(Collectors.toMap(
-                href -> href,
-                href -> getUrl((String)href)
-        ));
-
-        final String rootUrlPath = rootUrl.getPath();
         Map<String, String> tokens = new HashMap<>();
-        for (Map.Entry<String, URL> entry : urlMap.entrySet()) {
-            URL entryUrl = entry.getValue();
-            if(!entryUrl.getPath().contains(rootUrlPath))
-                continue;
-
-            if(!mappedURLs.containsKey(entryUrl) && alwaysMap){
-                String title = hrefTitleMap.get(entry.getKey());
-                title = filenameGenerator.apply(title);
-                mappedURLs.put(entryUrl.getPath(), title);
+        for (Map.Entry<String, String> entry : hrefTitleMap.entrySet()) {
+            String relativePath = entry.getKey();
+            URL url = getUrl(relativePath);
+            if(!mappedURLs.containsKey(url) && alwaysMap){
+                String title = hrefTitleMap.get(relativePath);
+                mappedURLs.put(url, title);
             }
-            tokens.put(entry.getKey(), mappedURLs.get(entryUrl));
+            tokens.put(relativePath, mappedURLs.get(url));
         }
         String html = links.getOuterHTML();
         String result = StringExtensions.replaceAll(html, tokens);
         return result;
     }
 
-    public Path saveChapter(URL chapterUrl, UIObject content){
-        worker.driver.get(chapterUrl.getPath());
-        worker.waitPageReady();
+    public Path saveChapter(URL url, UIObject.Collection content){
+        if(!mappedURLs.containsKey(url))
+            return null;
 
-        content = content == null ? rootObject : content;
+        worker.gotoUrl(url);
+
+        content = content == null ? new UIObject.Collection(rootObject, linkBy) : content;
         String reLinkedHtml = replaceChapterLinks(content);
         Map<String, String> imageTokens = getImageTokens(content);
         String replacement = StringExtensions.replaceAll(reLinkedHtml, imageTokens);
 
         String html = replacedHtml(content, replacement);
-        File file = new File(bookPath.toFile(), mappedURLs.get(chapterUrl));
+        File file = new File(bookRootFolder, mappedURLs.get(url));
         try {
             Path path = Files.write(file.toPath(), html.getBytes());
+            Logger.I("%s is saved as %s", content, path);
             return path;
         } catch (Exception ex) {
+            Logger.W(ex);
             return null;
         }
     }
 
-    private String replaceChapterLinks(UIObject content) {
+    private String replaceChapterLinks(UIObject.Collection content) {
         List<String> knownUrls = StringExtensions.sortedListByLengthDesc(
                 mappedURLs.keySet().stream()
+                        .map(url -> url.toString())
                         .collect(Collectors.toList()));
         String contentHtml = content.getOuterHTML();
+        final String rootUrlPath = rootUrl.getPath();
         List<String> urlElements = StringExtensions.getSegments(contentHtml, StringExtensions.linkPattern);
         Map<String, URL> urlMap = urlElements.stream()
                 .map(e -> StringExtensions.valueOfAttribute(e, "href"))
+                .distinct()
+                .filter(href -> href != null && !href.startsWith("#"))
                 .collect(Collectors.toMap(
                         href -> href,
                         href -> getUrl((String)href)
                 ));
 
-        final String rootUrlPath = rootUrl.getPath();
         Map<String, String> tokens = new HashMap<>();
         for (Map.Entry<String, URL> entry : urlMap.entrySet()) {
             URL entryUrl = entry.getValue();
             if(!entryUrl.getPath().contains(rootUrlPath))
                 continue;
 
-            String matched = StringExtensions.firstStartsWith(entry.getKey(), knownUrls);
+            String href = entry.getKey();
+            int index = href.indexOf('#');
+            if (index != -1){
+                href = href.substring(0, index);
+            }
+            if(tokens.containsKey(href))
+                continue;
+
+            String matched = StringExtensions.firstStartsWith(getUrl(href).toString(), knownUrls);
+            if (matched == null)
+                continue;
             URL matchedUrl = getUrl(matched);
-            if (matchedUrl == null) continue;
-            String replacedUrl = entry.getKey().replace(matched, mappedURLs.get(matchedUrl));
-            tokens.put(entry.getKey(), replacedUrl);
+            String replacement = mappedURLs.get(matchedUrl);
+            tokens.put(href, replacement);
         }
         String html = content.getOuterHTML();
         return StringExtensions.replaceAll(html, tokens);

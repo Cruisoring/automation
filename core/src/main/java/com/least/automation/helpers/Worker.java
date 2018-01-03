@@ -14,6 +14,8 @@ import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -80,13 +82,13 @@ public class Worker implements AutoCloseable, WorkingContext {
     private static Worker getChromePlayer(ChromeOptions options) {
         if (options == null) {
             options = new ChromeOptions();
-            options.addArguments("--start-maximized");
+            //options.addArguments("--start-maximized");
             options.addArguments("--disable-web-security");
 //            options.addArguments("--no-proxy-server");
 
             Map<String, Object> prefs = new HashMap<String, Object>();
-            prefs.put("credentials_enable_service", false);
-            prefs.put("profile.password_manager_enabled", false);
+            prefs.put("credentials_enable_service", true);
+            prefs.put("profile.password_manager_enabled", true);
 
             options.setExperimentalOption("prefs", prefs);
         }
@@ -115,6 +117,15 @@ public class Worker implements AutoCloseable, WorkingContext {
 
     public final RemoteWebDriver driver;
 
+    public URL getUrl(){
+        try {
+            return new URL(driver.getCurrentUrl());
+        } catch (MalformedURLException e) {
+            Logger.I(e);
+            return null;
+        }
+    }
+
     public String asBase64() {
         try {
             String base64 = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BASE64);
@@ -125,19 +136,16 @@ public class Worker implements AutoCloseable, WorkingContext {
     }
 
     public static final String replaceImageAsBase64Script = "if (typeof window.replaceImage === 'undefined') {\n" +
-            "\tvar canvas = canvas || document.createElement('canvas');\n" +
-            "\tvar ctx = ctx || canvas.getContext('2d');\n" +
-            "\twindow.replaceImage = function(e){\n" +
-            "\t\tif(e.tagName == 'IMG'){\n" +
-            "\t\t\tcanvas.width = e.width;\n" +
-            "\t\t\tcanvas.height = e.height;\n" +
-            "\t\t\tctx.drawImage(e, 0, 0);\n" +
-            "\t\t\te.src = canvas.toDataURL();\n" +
-            "\t\t\treturn true;\n" +
-            "\t\t}else {\n" +
-            "\t\t\treturn false;\n" +
-            "\t\t}\n" +
-            "\t}\n" +
+            "var canvas = canvas || document.createElement('canvas');\n" +
+            "var ctx = ctx || canvas.getContext('2d');\n" +
+            "window.replaceImage = function(e){\n" +
+            "if(e.tagName == 'IMG'){\n" +
+            "canvas.width = e.width;\n" +
+            "canvas.height = e.height;\n" +
+            "ctx.drawImage(e, 0, 0);\n" +
+            "e.src = canvas.toDataURL();\n" +
+            "return true;}else {return false;}\n" +
+            "}\n" +
             "}\n" +
             "replaceImage(arguments[0]);";
 
@@ -185,6 +193,10 @@ public class Worker implements AutoCloseable, WorkingContext {
         String currentUrl = driver.getCurrentUrl();
         Logger.I("get to: " + currentUrl);
         return currentUrl;
+    }
+
+    public String gotoUrl(URL url) {
+        return gotoUrl(url.toString());
     }
 
     public String switchTo(String framePath) {

@@ -1,4 +1,5 @@
-import com.least.automation.helpers.BookHelper;
+import com.least.automation.helpers.HtmlHelper;
+import com.least.automation.helpers.Logger;
 import com.least.automation.helpers.ResourceHelper;
 import com.least.automation.helpers.Worker;
 import org.testng.Assert;
@@ -7,9 +8,7 @@ import screens.LoginScreen;
 import screens.SearchScreen;
 import screens.ViewScreen;
 
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.List;
 import java.util.Properties;
 
 @Test
@@ -20,8 +19,9 @@ public class saveBookTests {
     public static final String saveLocation;
 
     static Worker worker;
-    SearchScreen searchScreen;
-    ViewScreen bookScreen;
+
+    static SearchScreen searchScreen;
+    static ViewScreen viewScreen;
 
     static {
         Properties properties = ResourceHelper.getProperties(defaultPropertyFilename);
@@ -35,41 +35,48 @@ public class saveBookTests {
         firstBook = properties.getProperty("firstBook");
         saveLocation = properties.getProperty("saveLocation");
 
-
         worker = Worker.getAvailable();
+
+        searchScreen = worker.getScreen(SearchScreen.class);
+        viewScreen = worker.getScreen(ViewScreen.class);
     }
 
 //    @BeforeClass
 //    public static void beforeClass(){
 //    }
 
-
     @Test
-    public void saveBookTest_withSingleBook_Success(){
-        searchScreen = worker.getScreen(SearchScreen.class);
-        bookScreen = worker.getScreen(ViewScreen.class);
+    public void saveBookTest_withIndexSaved_ChapterURLsUpdated(){
         worker.gotoUrl(startUrl);
 
         String bookname = searchScreen.searchBook(firstBook);
         boolean loginSuccess= worker.getScreen(LoginScreen.class).login();
         Assert.assertTrue(loginSuccess);
 
-        URL url = null;
-        try {
-            url = new URL(worker.driver.getCurrentUrl());
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
-        BookHelper bookHelper = new BookHelper(url, worker);
-        ViewScreen viewScreen = worker.getScreen(ViewScreen.class);
-        bookHelper.saveIndex(bookname, viewScreen.topics);
+        URL url = worker.getUrl();
+        HtmlHelper bookHelper = new HtmlHelper(url, worker);
+        bookHelper.saveIndex(bookname, viewScreen.topics, String.format("_%s.html", bookname));
+    }
 
-//        Path folderPath = Paths.get(saveLocation, bookname);
-//
-//        bookScreen.saveIndex(folderPath);
-//
-//        int count = bookScreen.saveAllTopics(folderPath);
-//        Logger.I("There are %d topics saved successfully.", count);
-////        bookScreen.saveTopic(bookScreen.topics.get(20), folderPath);
+    @Test
+    public void saveBookTest_withIndexAndTopicsSaved_AllLinksUpdated(){
+        worker.gotoUrl(startUrl);
+
+        String bookname = searchScreen.searchBook(firstBook);
+        boolean loginSuccess= worker.getScreen(LoginScreen.class).login();
+        Assert.assertTrue(loginSuccess);
+
+        URL url = worker.getUrl();
+        HtmlHelper bookHelper = new HtmlHelper(url, worker);
+        bookHelper.saveIndex(bookname, viewScreen.topics, String.format("_%s.html", bookname));
+
+        int count = 0;
+        for (URL chapterUrl : bookHelper.mappedURLs.keySet()) {
+            if(chapterUrl.equals(bookHelper.rootUrl))
+                continue;
+            if(null != bookHelper.saveChapter(chapterUrl, null))
+                count++;
+        }
+        Logger.I("There are %d topics saved successfully.", count);
     }
 }

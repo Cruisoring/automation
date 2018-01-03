@@ -19,6 +19,7 @@ public class StringExtensions {
 
     public static final Pattern simpleTableRowPattern = Pattern.compile("<tbody></tbody>");
     public static final Pattern linkPattern = Pattern.compile("<a[^>]*>[\\s\\S]*?</a>");
+    public static final Pattern svgPattern = Pattern.compile("<svg[^>]*>[\\s\\S]*?</svg>");
     public static final Pattern imagePattern = Pattern.compile("<img[^>]*?>");
 
     public static final String NewLine = System.getProperty("line.separator");
@@ -48,7 +49,6 @@ public class StringExtensions {
     public static Pattern getAttributePattern(String leadingKey){
         return getAttributePattern(leadingKey, attributeValueEnclosingChars);
     }
-
 
     public static String valueOfAttribute(String template, String attributeName){
         attributeName = attributeName.endsWith("=") ? attributeName : attributeName+"=";
@@ -99,6 +99,7 @@ public class StringExtensions {
         if (template == null) return null;
 
         String result = template.replaceAll("\\b(?!value)([-|_|\\w]+)=\\\"[^*]*?\\\"", "");
+        result = result.replaceAll("<svg[^>]*>[\\s\\S]*?</svg>", "");
         result = result.replaceAll("<input\\W+[^>]*value=\\\"([^\"]*)\\\"[^\\>]*>", "$1");
         String unescaped = StringEscapeUtils.unescapeHtml4(result);
         result = unescaped.replaceAll("<[^>]*>", "");
