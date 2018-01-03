@@ -36,7 +36,7 @@ public class StringExtensions {
         List<String> subs = new ArrayList<>();
         for(int i=0; i<enclosingChars.length(); i++){
             char ch = enclosingChars.charAt(i);
-            String splitter = String.format((RegexSpecialCharacters.indexOf(ch) == -1) ? "%s" : "\\%s", ch);
+            String splitter = String.format((RegexSpecialCharacters.indexOf(ch) == -1) ? "%s" : "\\" + "%s", ch);
             String sub = String.format(attributePatternTemplate, leadingKey, splitter, ch, splitter);
             subs.add(sub);
         }
@@ -68,7 +68,8 @@ public class StringExtensions {
 
         StringBuffer sb = new StringBuffer();
         while (matcher.find()) {
-            matcher.appendReplacement(sb, "\\" + matcher.group(1));
+            matcher.appendReplacement(sb, "");
+            sb.append("\\" + matcher.group(1));
         }
         matcher.appendTail(sb);
         return sb.toString();
@@ -83,7 +84,9 @@ public class StringExtensions {
 
         StringBuffer sb = new StringBuffer();
         while (matcher.find()) {
-            matcher.appendReplacement(sb, tokens.get(matcher.group(1)));
+            matcher.appendReplacement(sb, "");
+            String replacement = tokens.get(matcher.group(1));
+            sb.append(replacement);
         }
         matcher.appendTail(sb);
         return sb.toString();

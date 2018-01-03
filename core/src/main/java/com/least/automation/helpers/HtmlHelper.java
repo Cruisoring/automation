@@ -18,6 +18,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class HtmlHelper {
+    public final static String URIReservedChars = "!*'();:@&=+$,/?%#[]";
+    public final static Map<String, String> escapedChars = new HashMap<>();
     public final static By RootBy = By.tagName("html");
     public final static By BodyBy = By.tagName("body");
     public final static By HtmlTitleBy = By.tagName("head>title");
@@ -29,6 +31,12 @@ public class HtmlHelper {
     protected static Path booksDirectory = Paths.get("C:/test/books/");
 
     static {
+        for (int i=0; i< URIReservedChars.length(); i++) {
+            String sub = URIReservedChars.substring(i, i+1);
+            char ch = URIReservedChars.charAt(i);
+            escapedChars.put(sub,  "%" + String.format("%02x", (int)ch));
+        }
+
         if (!Files.exists(booksDirectory)){
             try {
                 booksDirectory = Files.createDirectories(booksDirectory);
@@ -41,6 +49,10 @@ public class HtmlHelper {
     public static String getFilename(String filename, String suffix){
         filename = filename.trim().replaceAll("\\s+", " ");
         return (filename.endsWith(suffix)) ? filename : filename + suffix;
+    }
+
+    public static String percentageEncoding(String urlString){
+        return StringExtensions.replaceAll(urlString, escapedChars);
     }
 
     public static String replaceImgWithBase64(String html, String source, String base64) {
@@ -195,7 +207,12 @@ public class HtmlHelper {
                 String title = hrefTitleMap.get(relativePath);
                 mappedURLs.put(url, title);
             }
-            tokens.put(relativePath, mappedURLs.get(url));
+            String mapped = mappedURLs.get(url);
+            String encoded = percentageEncoding(mapped);
+            if(!mapped.equals(encoded)){
+                Logger.D("%s is encoded as %s", mapped, encoded);
+            }
+            tokens.put(relativePath, encoded);
         }
         String html = links.getOuterHTML();
         String result = StringExtensions.replaceAll(html, tokens);
@@ -260,8 +277,12 @@ public class HtmlHelper {
             if (matched == null)
                 continue;
             URL matchedUrl = getUrl(matched);
-            String replacement = mappedURLs.get(matchedUrl);
-            tokens.put(href, replacement);
+            String mapped = mappedURLs.get(matchedUrl);
+            String encoded = percentageEncoding(mapped);
+            if(!mapped.equals(encoded)){
+                Logger.D("%s is encoded as %s", mapped, encoded);
+            }
+            tokens.put(href, encoded);
         }
         String html = content.getOuterHTML();
         return StringExtensions.replaceAll(html, tokens);

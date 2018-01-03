@@ -24,7 +24,7 @@ public class ViewScreen extends Screen {
 
     public ViewScreen(Worker worker){
         super(worker);
-        detailBook = new UIObject(this, By.cssSelector("section[role='document'], section.detail-book"));
+        detailBook = new UIObject(this, By.cssSelector("section[role='document'], section.detail-book, .detail-toc"));
         topics = new UIObject.Collection(detailBook, By.cssSelector("li[class^='toc-level']>a"));
 //        links = new UIObject.Collection(detailBook, By.cssSelector("a"));
     }
