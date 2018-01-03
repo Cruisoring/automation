@@ -32,6 +32,10 @@ public class SearchScreen extends Screen {
 
         firstResult.waitChanges(o -> o.getAllText().trim());
         String bookTitle = firstResult.bookTitle.getAllText().trim();
+        int indexOfIllegalChar = StringExtensions.indexOfAny(bookTitle, 0, StringExtensions.WindowsSpecialCharacters);
+        if(indexOfIllegalChar != -1)
+            bookTitle = bookTitle.substring(0, indexOfIllegalChar).trim();
+
         if(!StringExtensions.containsAllIgnoreCase(bookTitle, bookname)){
             return null;
         }

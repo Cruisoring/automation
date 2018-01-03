@@ -12,6 +12,7 @@ import java.util.stream.Stream;
 
 public class StringExtensions {
     public static final String RegexSpecialCharacters = "[\\^$.|?*+(){}";
+    public static final Character[] WindowsSpecialCharacters = new Character[] {'<', '>', ':', '"', '/', '\\', '|', '?', '*'};
     public static final Pattern escapeCharsPattern = Pattern.compile("(\\[|\\\\|\\^|\\$|\\.|\\||\\?|\\*|\\+|\\(|\\)|\\{|\\})");
     public static final Function<Object, String[]> defaultToStringForms = o -> new String[]{o.toString()};
     public static final BiPredicate<String, String> contains = (s, k) -> StringUtils.contains(s, k);
