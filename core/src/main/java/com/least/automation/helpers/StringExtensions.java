@@ -12,7 +12,7 @@ import java.util.stream.Stream;
 
 public class StringExtensions {
     public static final String RegexSpecialCharacters = "[\\^$.|?*+(){}";
-    public static final Character[] WindowsSpecialCharacters = new Character[] {'<', '>', ':', '"', '/', '\\', '|', '?', '*'};
+    public static final Character[] WindowsSpecialCharacters = new Character[] {'"', '*', '<', '>', ':', '/', '\\', '|', '?', };
     public static final Pattern escapeCharsPattern = Pattern.compile("(\\[|\\\\|\\^|\\$|\\.|\\||\\?|\\*|\\+|\\(|\\)|\\{|\\})");
     public static final Function<Object, String[]> defaultToStringForms = o -> new String[]{o.toString()};
     public static final BiPredicate<String, String> contains = (s, k) -> StringUtils.contains(s, k);
@@ -92,6 +92,64 @@ public class StringExtensions {
         matcher.appendTail(sb);
         return sb.toString();
     }
+
+    public static String removeAllCharacters(String template, Character... chars){
+        if(template == null) return template;
+
+        int templateLen = template.length();
+        if(templateLen==0 || chars == null || chars.length == 0)
+            return template;
+
+        Character[] sorted = ArrayHelper.getSorted(chars);
+        int sortedLength = sorted.length;
+        Character min = sorted[0];
+        Character max = sorted[sortedLength-1];
+        StringBuilder sb = new StringBuilder();
+        for(int i=0; i<templateLen; i ++){
+            Character ch = Character.valueOf(template.charAt(i));
+            if(ch.compareTo(min)==0 || ch.compareTo(max)==0)
+                continue;
+            else if(ch.compareTo(min)<0 || ch.compareTo(max)>0) {
+                sb.append(ch);
+                continue;
+            } else {
+                boolean matched = false;
+                for(int j=1; j<sortedLength-2; j++){
+                    Character token = sorted[j];
+                    int withToken = ch.compareTo(token);
+                    if(withToken == 0) {
+                        matched = true;
+                        break;
+                    }
+                    else if(withToken < 0){
+                        break;
+                    }
+                }
+                if(!matched)
+                    sb.append(ch);
+            }
+        }
+        return sb.toString();
+    }
+
+
+    public static String removeAllChars(String template, char... chars){
+        return removeAllCharacters(template, toCharacters(chars));
+    }
+
+    public static String removeAllReserved(String template, String reserved){
+        return removeAllChars(template, reserved.toCharArray());
+    }
+
+    public static Character[] toCharacters(char... chars){
+        int length = chars.length;
+        Character[] result = new Character[length];
+        for(int i=0; i< length; i++){
+            result[i] = Character.valueOf(chars[i]);
+        }
+        return result;
+    }
+
 
     public static List<String> sortedListOf(Collection<String> strings, Comparator<String> comparator){
         List<String> list = (strings instanceof List) ? (List<String>)strings : new ArrayList<>(strings);

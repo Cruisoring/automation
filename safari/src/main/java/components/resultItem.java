@@ -24,4 +24,10 @@ public class resultItem extends UIObject {
         publishDate = metas.get(2);
         description = new UIObject(this, By.cssSelector("span.description"));
     }
+
+    @Override
+    public void invalidate(){
+        super.invalidate();
+        bookTitle.invalidate();
+    }
 }

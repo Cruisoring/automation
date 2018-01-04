@@ -15,6 +15,8 @@ public interface IUIObject extends WorkingContext {
 
     Boolean exists();
 
+    void invalidate();
+
     Boolean isDisplayed();
 
     String getTextContent();

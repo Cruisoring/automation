@@ -1,5 +1,6 @@
 package screens;
 
+import com.least.automation.helpers.Logger;
 import com.least.automation.helpers.StringExtensions;
 import com.least.automation.helpers.Worker;
 import com.least.automation.wrappers.Screen;
@@ -8,6 +9,7 @@ import com.least.automation.wrappers.UIEdit;
 import com.least.automation.wrappers.UIObject;
 import components.resultItem;
 import org.openqa.selenium.By;
+import org.openqa.selenium.Keys;
 
 public class SearchScreen extends Screen {
     public final By resultItemContainerBy = By.cssSelector("div#js-results-region");
@@ -28,17 +30,20 @@ public class SearchScreen extends Screen {
         resultItem firstResult = resultItems.getChildren().get(0);
         waitScreenVisible();
         search.enterByScript(bookname);
-        searchButton.click();
+        if(searchButton.isVisible())
+            searchButton.click();
+        else
+            search.getElement().sendKeys(Keys.RETURN);
 
-        firstResult.waitChanges(o -> o.getAllText().trim());
+        firstResult.waitChanges(o -> o.getAllText());
         String bookTitle = firstResult.bookTitle.getAllText().trim();
-        int indexOfIllegalChar = StringExtensions.indexOfAny(bookTitle, 0, StringExtensions.WindowsSpecialCharacters);
-        if(indexOfIllegalChar != -1)
-            bookTitle = bookTitle.substring(0, indexOfIllegalChar).trim();
+        Logger.I("book found: " + bookTitle);
 
-        if(!StringExtensions.containsAllIgnoreCase(bookTitle, bookname)){
+        if(!StringExtensions.containsAllIgnoreCase(bookTitle, bookname.split(" "))){
             return null;
         }
+        bookTitle = StringExtensions.removeAllCharacters(bookTitle, StringExtensions.WindowsSpecialCharacters)
+                .replaceAll("\\s+", " ");
         firstResult.bookTitle.click();
         firstResult.waitGone();
         return bookTitle;

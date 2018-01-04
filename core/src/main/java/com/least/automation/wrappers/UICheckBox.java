@@ -39,7 +39,10 @@ public class UICheckBox extends UIObject  {
     }
 
     public Boolean setChecked(Boolean toCheck) {
-        return super.perform(()->click(), ()-> toCheck == isChecked(), 1);
+        return super.perform(new Runnable[]{
+                () -> getElement().click(),
+                () -> this.clickByScript()
+        }, ()-> toCheck == isChecked(), 1);
     }
 
     @Override

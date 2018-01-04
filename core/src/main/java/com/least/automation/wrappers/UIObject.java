@@ -77,8 +77,9 @@ public class UIObject implements IUIObject {
         return worker;
     }
 
+    @Override
     public void invalidate(){
-        worker.invalidate();
+//        parent.invalidate();
         element = null;
     }
 
@@ -229,7 +230,10 @@ public class UIObject implements IUIObject {
         }
 
         Predicate<T> finalPredicate = predicate;
-        return Executor.testUntil(()-> finalPredicate.test(propertyExtractor.apply(this)), waitTimeoutMills);
+        Boolean result = Executor.testUntil(()-> finalPredicate.test(
+                propertyExtractor.apply(this)), waitTimeoutMills);
+        invalidate();
+        return result;
     }
 
     public Boolean waitDisplayed(int waitDisplayedMills) {
@@ -373,7 +377,8 @@ public class UIObject implements IUIObject {
                 times = DefaultHighlightTimes;
             }
 
-            if(getElement().getTagName() == "img" || getAttribute("type") == "checkbox"){
+            if("img".equalsIgnoreCase(getElement().getTagName()) ||
+                    "checkbox".equalsIgnoreCase(getAttribute("type"))){
                 highlightScript.replaceAll("arguments[0]", "arguments[0].parentElement");
                 resetScript.replaceAll("arguments[0]", "arguments[0].parentElement");
             }
@@ -410,6 +415,7 @@ public class UIObject implements IUIObject {
     @Override
     public void clickByScript(){
         executeScript("arguments[0].click();");
+        Logger.V("%s is clicked by Script.", this);
     }
 
     /**
@@ -460,6 +466,7 @@ public class UIObject implements IUIObject {
         }
         Actions builder = new Actions(worker.driver);
         builder.contextClick(e).perform();
+        Logger.V("%s is right-clicked.", this);
     }
 
     @Override
@@ -575,7 +582,10 @@ public class UIObject implements IUIObject {
     @Override
     public void click() {
         if (perform(null)) {
-            Logger.D("%s is clicked.", this);
+            Logger.V("%s is clicked.", this);
+        } else {
+            Logger.W("Failed to click on %s.", this);
+            Logger.V("%s: %s", this, getOuterHTML());
         }
     }
 

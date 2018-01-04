@@ -1,5 +1,7 @@
 package com.least.automation.helpers;
 
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.function.Predicate;
 import java.util.stream.IntStream;
 
@@ -34,5 +36,15 @@ public class ArrayHelper {
                 .filter(i -> predicate.test(array[i]))
                 .findFirst()
                 .orElse(-1);
+    }
+
+    public static <T> T[] getSorted(Comparator<? super T> comparator, T... values){
+        Arrays.sort(values, comparator);
+        return values;
+    }
+
+    public static <T extends Comparable<? super T>> T[] getSorted(T... values){
+        Comparator<T> comparator = Comparator.<T>naturalOrder();
+        return getSorted(comparator, values);
     }
 }

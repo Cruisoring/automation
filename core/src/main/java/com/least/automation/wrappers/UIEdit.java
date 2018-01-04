@@ -49,6 +49,7 @@ public class UIEdit extends UIObject implements IUIEdit {
         executeScript(script);
 //        fireEvent("change");
 //        fireEvent("blur");
+        Logger.D("'%s' is entered by Script to %s", text, this);
     }
 
     @Override

@@ -11,6 +11,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -83,6 +84,7 @@ public class HtmlHelper {
     private final Function<String, String> filenameGenerator;
     private final UIObject rootObject;
     public final Map<URL, String> mappedURLs = new HashMap<>();
+    public final List<URL> topics = new ArrayList<>();
     File bookRootFolder;
 
     public HtmlHelper(URL rootUrl, Worker worker, Function<String, String> filenameGenerator){
@@ -131,7 +133,7 @@ public class HtmlHelper {
         bookRootFolder = bookRoot.toFile();
         File file = new File(bookRootFolder, indexFilename);
         content = content == null ? new UIObject.Collection(rootObject, linkBy) : content;
-        String reLinkedHtml = getRelinkedHtml(content, true);
+        String reLinkedHtml = getRelinkedHtml(content);
 
         Map<String, String> imageTokens = getImageTokens(content);
         String replacement = StringExtensions.replaceAll(reLinkedHtml, imageTokens);
@@ -182,7 +184,7 @@ public class HtmlHelper {
         return tokens;
     }
 
-    private String getRelinkedHtml(UIObject.Collection links, boolean alwaysMap) {
+    private String getRelinkedHtml(UIObject.Collection links) {
         Map<String, String> hrefTitleMap = new HashMap<>();
         final String rootUrlPath = rootUrl.getPath();
         for (UIObject link : links.getChildren()) {
@@ -193,7 +195,10 @@ public class HtmlHelper {
                 continue;
 
             if(!hrefTitleMap.containsKey(href)){
-                String title = link.getAllText().trim().replaceAll("\\s+", " ");
+                topics.add(url);
+                String title = StringExtensions.removeAllCharacters(link.getAllText().trim(),
+                        StringExtensions.WindowsSpecialCharacters)
+                        .replaceAll("\\s+", " ");
                 if(StringUtils.isNotEmpty(title))
                     hrefTitleMap.put(href, filenameGenerator.apply(title));
             }
@@ -203,7 +208,7 @@ public class HtmlHelper {
         for (Map.Entry<String, String> entry : hrefTitleMap.entrySet()) {
             String relativePath = entry.getKey();
             URL url = getUrl(relativePath);
-            if(!mappedURLs.containsKey(url) && alwaysMap){
+            if(!mappedURLs.containsKey(url)){
                 String title = hrefTitleMap.get(relativePath);
                 mappedURLs.put(url, title);
             }
@@ -249,23 +254,26 @@ public class HtmlHelper {
                         .collect(Collectors.toList()));
         String contentHtml = content.getOuterHTML();
         final String rootUrlPath = rootUrl.getPath();
-        List<String> urlElements = StringExtensions.getSegments(contentHtml, StringExtensions.linkPattern);
-        Map<String, URL> urlMap = urlElements.stream()
+        List<String> hrefs = StringExtensions.getSegments(contentHtml, StringExtensions.linkPattern)
+                .stream()
                 .map(e -> StringExtensions.valueOfAttribute(e, "href"))
                 .distinct()
                 .filter(href -> href != null && !href.startsWith("#"))
+                .collect(Collectors.toList());
+
+        Map<String, URL> urlMap = hrefs.stream()
                 .collect(Collectors.toMap(
                         href -> href,
                         href -> getUrl((String)href)
                 ));
 
         Map<String, String> tokens = new HashMap<>();
-        for (Map.Entry<String, URL> entry : urlMap.entrySet()) {
-            URL entryUrl = entry.getValue();
-            if(!entryUrl.getPath().contains(rootUrlPath))
+        for (String ref : hrefs) {
+            String href = ref;
+            URL url = urlMap.get(href);
+            if(!url.getPath().contains(rootUrlPath))
                 continue;
 
-            String href = entry.getKey();
             int index = href.indexOf('#');
             if (index != -1){
                 href = href.substring(0, index);

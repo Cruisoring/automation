@@ -107,9 +107,9 @@ public class Logger {
             case "debug":
                 return String.format("%s%s %s%s", CYAN, label, m, ANSI_RESET);
             case "info":
-                return String.format("%s%s %s%s", ANSI_YELLOW, label, m, ANSI_RESET);
+                return String.format("%s%s %s%s", YELLOW, label, m, ANSI_RESET);
             case "warning":
-                return String.format("%s%s %s%s", ANSI_BLINK, label, m, ANSI_RESET);
+                return String.format("%s%s %s%s", PURPLE, label, m, ANSI_RESET);
             case "error":
                 return String.format("%s%s %s%s", RED, label, m, ANSI_RESET);
             default:
@@ -124,7 +124,7 @@ public class Logger {
             case "debug":
                 return 3;
             case "info":
-                return -3;
+                return 0;
             case "warning":
                 return 0;
             case "error":
@@ -329,8 +329,13 @@ public class Logger {
     }
 
     public void log(LogLevel level, Exception ex) {
-        String stackTrace = getStackTrace(stackCountFun.apply(level));
-        log(level, formatedMessage("%s happened:\r\n%s", ex.getClass().getSimpleName(), stackTrace));
+        int stackCount = stackCountFun.apply(level);
+        if(stackCount != 0) {
+            String stackTrace = getStackTrace(stackCountFun.apply(level));
+            log(level, formatedMessage("%s:\r\n%s", ex.getClass().getSimpleName(), stackTrace));
+        } else {
+            log(level, formatedMessage("%s: %s", ex.getClass().getSimpleName(), ex.getMessage()));
+        }
     }
 
     public void verbose(String format, Object... args){

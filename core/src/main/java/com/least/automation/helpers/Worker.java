@@ -310,7 +310,7 @@ public class Worker implements AutoCloseable, WorkingContext {
         return waitAjaxDone(DefaultPageReadyTimeoutMills);
     }
 
-    //    @Override
+    @Override
     public void invalidate() {
     }
 

@@ -71,9 +71,9 @@ public class saveBookTests {
         bookHelper.saveIndex(bookname, viewScreen.topics, String.format("_%s.html", bookname));
 
         int count = 0;
-        for (URL chapterUrl : bookHelper.mappedURLs.keySet()) {
-            if(chapterUrl.equals(bookHelper.rootUrl))
-                continue;
+        for (URL chapterUrl : bookHelper.topics) {
+//            if(!chapterUrl.toString().contains("9781680502794/f_0005.xhtml#d24e111"))
+//                continue;
             if(null != bookHelper.saveChapter(chapterUrl, null))
                 count++;
         }
