@@ -188,11 +188,17 @@ public class HtmlHelper {
         Map<String, String> hrefTitleMap = new HashMap<>();
         final String rootUrlPath = rootUrl.getPath();
         for (UIObject link : links.getChildren()) {
-            String href = link.getAttribute("href");
+            String href = link.getAttribute("href").trim();
             URL url = getUrl(href);
 
             if(href.startsWith("#") || !url.getPath().contains(rootUrlPath))
                 continue;
+
+            int index = href.indexOf('#');
+            if(index != -1){
+                href = href.substring(0, index);
+                url = getUrl(href);
+            }
 
             if(!hrefTitleMap.containsKey(href)){
                 topics.add(url);
