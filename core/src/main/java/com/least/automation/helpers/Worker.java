@@ -50,10 +50,21 @@ public class Worker implements AutoCloseable, WorkingContext {
     private static final List<WebDriver> drivers = new ArrayList<>();
     private static int driverCount = 0;
 
+    private final static Proxy proxy;
+
     static {
         Properties properties = ResourceHelper.getProperties("driver.properties");
-        for (String propName: properties.stringPropertyNames()) {
+        for (String propName : properties.stringPropertyNames()) {
             System.setProperty(propName, properties.getProperty(propName));
+        }
+
+        String proxyHost = System.getenv("user.http.proxyHost");
+        if (proxyHost != null) {
+            String httpProxy = String.format("%s:%s", proxyHost, System.getenv("user.http.proxyPort"));
+            proxy = new Proxy();
+            proxy.setHttpProxy(httpProxy);
+        } else {
+            proxy = null;
         }
     }
 
@@ -63,8 +74,8 @@ public class Worker implements AutoCloseable, WorkingContext {
 
     public static Worker getAvailable(DriverType... type) {
         if (singleton == null) {
-            singleton = getGhostDriverPlayer(null);
-//            singleton = getChromePlayer(null);
+//            singleton = getGhostDriverPlayer(null);
+            singleton = getChromePlayer(null);
         }
         return singleton;
     }
@@ -88,24 +99,34 @@ public class Worker implements AutoCloseable, WorkingContext {
             options = new ChromeOptions();
             //options.addArguments("--start-maximized");
             options.addArguments("--disable-web-security");
-//            options.addArguments("--no-proxy-server");
+            if("true".equalsIgnoreCase(System.getProperty("headless")))
+                options.setHeadless(true);
 
             Map<String, Object> prefs = new HashMap<String, Object>();
             prefs.put("credentials_enable_service", true);
             prefs.put("profile.password_manager_enabled", true);
 
             options.setExperimentalOption("prefs", prefs);
+//            if(proxy != null)
+//                options.setProxy(proxy);
+//            else
+//                options.addArguments("--no-proxy-server");
         }
         ChromeDriver chrome = new ChromeDriver(options);
         return new Worker(chrome);
     }
 
     private static Worker getGhostDriverPlayer(DesiredCapabilities options) {
+
         if (options == null) {
             options = new DesiredCapabilities();
             options.setJavascriptEnabled(true);
             options.setCapability("takesScreenshot", false);
+            if (proxy != null){
+                options.setCapability(CapabilityType.PROXY, proxy);
+            }
         }
+
         PhantomJSDriver driver = new PhantomJSDriver(options);
         return new Worker(driver);
     }

@@ -9,7 +9,6 @@ import com.least.automation.wrappers.UIEdit;
 import com.least.automation.wrappers.UIObject;
 import components.resultItem;
 import org.openqa.selenium.By;
-import org.openqa.selenium.Keys;
 
 public class SearchScreen extends Screen {
     public final By resultItemContainerBy = By.cssSelector("div#js-results-region");
@@ -27,19 +26,19 @@ public class SearchScreen extends Screen {
 
 
     public String searchBook(String bookname){
-        resultItem firstResult = resultItems.getChildren().get(0);
+        final String[] keys = bookname.split(" ");
+        resultItem firstResult = resultItems.get(0);
         waitScreenVisible();
-        search.enterByScript(bookname);
+        search.enterText(bookname);
         if(searchButton.isVisible())
             searchButton.click();
-        else
-            search.getElement().sendKeys(Keys.RETURN);
 
         firstResult.waitChanges(o -> o.getAllText());
+        firstResult = resultItems.get( r -> StringExtensions.containsAllIgnoreCase(r.bookTitle.getAllText(), keys));
         String bookTitle = firstResult.bookTitle.getAllText().trim();
         Logger.I("book found: " + bookTitle);
 
-        if(!StringExtensions.containsAllIgnoreCase(bookTitle, bookname.split(" "))){
+        if(!StringExtensions.containsAllIgnoreCase(bookTitle, keys)){
             return null;
         }
         bookTitle = StringExtensions.removeAllCharacters(bookTitle, StringExtensions.WindowsSpecialCharacters)

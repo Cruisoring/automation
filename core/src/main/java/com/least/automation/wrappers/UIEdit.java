@@ -66,7 +66,7 @@ public class UIEdit extends UIObject implements IUIEdit {
 
     @Override
     public void enterText(String text) {
-        if(perform(text)) {
+        if(perform(text + "\n\r")) {
             Logger.D("'%s' is entered to %s", text, this);
         }
     }
