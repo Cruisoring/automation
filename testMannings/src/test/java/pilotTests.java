@@ -7,11 +7,6 @@ import screens.baseScreen;
 public class pilotTests {
     public static String startUrl = "https://livebook.manning.com/#!/book/rx-dot-net-in-action/chapter-1";
 
-    static {
-        System.setProperty("webdriver.chrome.driver", "../drivers/chromedriver.exe");
-//        System.setProperty("webdriver.ie.driver", "vendor/IEDriverServer.exe");
-    }
-
     @Test
     public void openChapterTwo(){
         Worker worker = Worker.getAvailable();
@@ -20,6 +15,6 @@ public class pilotTests {
         baseScreen screen = new baseScreen(worker);
         Assert.assertTrue(screen.openChapterOf(1));
 
-        String html = worker.asHtmlElement(screen.content, true);
+//        String html = worker.asHtmlElement(screen.content, true);
     }
 }

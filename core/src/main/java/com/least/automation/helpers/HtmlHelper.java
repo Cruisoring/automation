@@ -215,7 +215,7 @@ public class HtmlHelper {
             String mapped = mappedURLs.get(url);
             String encoded = percentageEncoding(mapped);
             if(!mapped.equals(encoded)){
-                Logger.D("%s is encoded as %s", mapped, encoded);
+                Logger.V("'%s' is encoded as '%s'", mapped, encoded);
             }
             tokens.put(relativePath, encoded);
         }
@@ -288,7 +288,7 @@ public class HtmlHelper {
             String mapped = mappedURLs.get(matchedUrl);
             String encoded = percentageEncoding(mapped);
             if(!mapped.equals(encoded)){
-                Logger.D("%s is encoded as %s", mapped, encoded);
+                Logger.V("'%s' is encoded as '%s'", mapped, encoded);
             }
             tokens.put(href, encoded);
         }

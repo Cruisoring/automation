@@ -10,6 +10,7 @@ import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.ie.InternetExplorerDriver;
+import org.openqa.selenium.phantomjs.PhantomJSDriver;
 import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
@@ -49,10 +50,12 @@ public class Worker implements AutoCloseable, WorkingContext {
     private static final List<WebDriver> drivers = new ArrayList<>();
     private static int driverCount = 0;
 
-//    static {
-//        System.setProperty("webdriver.chrome.driver", "../drivers/chromedriver.exe");
-////        System.setProperty("webdriver.ie.driver", "vendor/IEDriverServer.exe");
-//    }
+    static {
+        Properties properties = ResourceHelper.getProperties("driver.properties");
+        for (String propName: properties.stringPropertyNames()) {
+            System.setProperty(propName, properties.getProperty(propName));
+        }
+    }
 
     public static Map<String, String> mappedURLs = new HashMap<>();
 
@@ -60,7 +63,8 @@ public class Worker implements AutoCloseable, WorkingContext {
 
     public static Worker getAvailable(DriverType... type) {
         if (singleton == null) {
-            singleton = getChromePlayer(null);
+            singleton = getGhostDriverPlayer(null);
+//            singleton = getChromePlayer(null);
         }
         return singleton;
     }
@@ -94,6 +98,16 @@ public class Worker implements AutoCloseable, WorkingContext {
         }
         ChromeDriver chrome = new ChromeDriver(options);
         return new Worker(chrome);
+    }
+
+    private static Worker getGhostDriverPlayer(DesiredCapabilities options) {
+        if (options == null) {
+            options = new DesiredCapabilities();
+            options.setJavascriptEnabled(true);
+            options.setCapability("takesScreenshot", false);
+        }
+        PhantomJSDriver driver = new PhantomJSDriver(options);
+        return new Worker(driver);
     }
 
     public static String mergeFramePath(String parentFramePath, String framePath) {

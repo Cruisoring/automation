@@ -24,13 +24,13 @@
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <drivers>${basedir}/../drivers</drivers>
+        <drivers>../drivers</drivers>
 
         <!-- Driver Path -->
         <webdriver.chrome.driver>${drivers}/chromedriver.exe</webdriver.chrome.driver>
         <webdriver.gecko.driver>${drivers}</webdriver.gecko.driver>
         <webdriver.opera.driver>${drivers}</webdriver.opera.driver>
-        <phantomjs.binary.path>${drivers}</phantomjs.binary.path>
+        <phantomjs.binary.path>${drivers}/phantomjs.exe</phantomjs.binary.path>
         <webdriver.edge.driver>${drivers}</webdriver.edge.driver>
         <webdriver.ie.driver>${drivers}</webdriver.ie.driver>
 
@@ -48,6 +48,13 @@
             <groupId>org.seleniumhq.selenium</groupId>
             <artifactId>selenium-java</artifactId>
             <version>${selenium.version}</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/com.codeborne/phantomjsdriver -->
+        <dependency>
+            <groupId>com.codeborne</groupId>
+            <artifactId>phantomjsdriver</artifactId>
+            <version>1.4.3</version>
         </dependency>
 
         <dependency>
@@ -70,12 +77,12 @@
         </dependency>
     </dependencies>
 
-    <build>
-        <resources>
-            <resource>
-                <directory>${basedir}/../core/src/main/resources</directory>
-                <filtering>true</filtering>
-            </resource>
-        </resources>
-    </build>
+    <!--<build>-->
+        <!--<resources>-->
+            <!--<resource>-->
+                <!--<directory>core/src/main/resources</directory>-->
+                <!--<filtering>true</filtering>-->
+            <!--</resource>-->
+        <!--</resources>-->
+    <!--</build>-->
 </project>

@@ -25,11 +25,6 @@ public class saveBookTests {
 
     static {
         Properties properties = ResourceHelper.getProperties(defaultPropertyFilename);
-        properties.stringPropertyNames()
-                .stream().filter(p -> p.contains("webdriver")).forEach(p ->
-                System.setProperty(p.toString(), properties.getProperty(p.toString()))
-        );
-        String chromeDriverPath = System.getProperty("webdriver.chrome.driver");
 
         startUrl = properties.getProperty("startUrl");
         firstBook = properties.getProperty("firstBook");
