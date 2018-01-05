@@ -264,7 +264,7 @@ public class HtmlHelper {
                 .stream()
                 .map(e -> StringExtensions.valueOfAttribute(e, "href"))
                 .distinct()
-                .filter(href -> href != null && !href.startsWith("#"))
+                .filter(href -> href != null && !href.contains("#"))
                 .collect(Collectors.toList());
 
         Map<String, URL> urlMap = hrefs.stream()
@@ -277,15 +277,6 @@ public class HtmlHelper {
         for (String ref : hrefs) {
             String href = ref;
             URL url = urlMap.get(href);
-            if(!url.getPath().contains(rootUrlPath))
-                continue;
-
-            int index = href.indexOf('#');
-            if (index != -1){
-                href = href.substring(0, index);
-            }
-            if(tokens.containsKey(href))
-                continue;
 
             String matched = StringExtensions.firstStartsWith(getUrl(href).toString(), knownUrls);
             if (matched == null)

@@ -3,6 +3,8 @@ import com.least.automation.helpers.Logger;
 import com.least.automation.helpers.ResourceHelper;
 import com.least.automation.helpers.Worker;
 import org.testng.Assert;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import screens.LoginScreen;
 import screens.SearchScreen;
@@ -18,27 +20,34 @@ public class saveBookTests {
     public static final String firstBook;
     public static final String saveLocation;
 
-    static Worker worker;
-
-    static SearchScreen searchScreen;
-    static ViewScreen viewScreen;
-
     static {
         Properties properties = ResourceHelper.getProperties(defaultPropertyFilename);
 
         startUrl = properties.getProperty("startUrl");
         firstBook = properties.getProperty("firstBook");
         saveLocation = properties.getProperty("saveLocation");
+    }
 
+    static Worker worker;
+
+    static SearchScreen searchScreen;
+    static ViewScreen viewScreen;
+
+    @BeforeClass
+    public static void beforeClass(){
         worker = Worker.getAvailable();
 
         searchScreen = worker.getScreen(SearchScreen.class);
         viewScreen = worker.getScreen(ViewScreen.class);
     }
 
-//    @BeforeClass
-//    public static void beforeClass(){
-//    }
+    @AfterClass
+    public static void afterClass() throws Exception {
+        if(worker != null){
+            worker.close();
+            worker = null;
+        }
+    }
 
     @Test
     public void saveBookTest_withIndexSaved_ChapterURLsUpdated(){

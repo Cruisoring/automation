@@ -70,14 +70,13 @@ public class Worker implements AutoCloseable, WorkingContext {
 
     public static Map<String, String> mappedURLs = new HashMap<>();
 
-    private static Worker singleton = null;
-
     public static Worker getAvailable(DriverType... type) {
-        if (singleton == null) {
-//            singleton = getGhostDriverPlayer(null);
-            singleton = getChromePlayer(null);
-        }
-        return singleton;
+        return
+                /*/
+                getChromePlayer(null);
+                /*/
+                getGhostDriverPlayer(null);
+                //*/
     }
 
     private static Worker getIEPlayer(DesiredCapabilities desiredCapabilities) {
@@ -365,6 +364,7 @@ public class Worker implements AutoCloseable, WorkingContext {
             Logger.V("Driver '%s' is closed successfully.", driverDesc);
         } catch (Exception ex) {
             Logger.W(ex);
+        } finally {
             driver.quit();
         }
     }
