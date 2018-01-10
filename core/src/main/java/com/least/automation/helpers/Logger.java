@@ -332,7 +332,7 @@ public class Logger {
         int stackCount = stackCountFun.apply(level);
         if(stackCount != 0) {
             String stackTrace = getStackTrace(stackCountFun.apply(level));
-            log(level, formatedMessage("%s:\r\n%s", ex.getClass().getSimpleName(), stackTrace));
+            log(level, formatedMessage("%s:%s\r\n%s", ex.getClass().getSimpleName(), ex.getMessage(), stackTrace));
         } else {
             log(level, formatedMessage("%s: %s", ex.getClass().getSimpleName(), ex.getMessage()));
         }

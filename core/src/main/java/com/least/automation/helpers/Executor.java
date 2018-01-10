@@ -60,10 +60,10 @@ public class Executor{
 
                 if (result)
                     return result;
-                sleep(delayMills);
             }catch (Exception e){
                 Logger.V(e);
             }
+            sleep(delayMills);
         }
         return false;
     }

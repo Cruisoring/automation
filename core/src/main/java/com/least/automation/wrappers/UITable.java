@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class UITable extends UICollection<UITable.UIRow> {
@@ -29,7 +28,7 @@ public class UITable extends UICollection<UITable.UIRow> {
 
     public final String tableCssSelector;
     public final UICollection<UIObject> headers;
-    private List<String> headerTexts;
+    private final List<String> headerTexts = new ArrayList<>();
 
     //TODO: the tabelCssSelector might not contains table tagname like "parent>.[id='...']"
     public UITable(WorkingContext context, String tableCssSelector, Integer index) {
@@ -46,21 +45,18 @@ public class UITable extends UICollection<UITable.UIRow> {
     }
 
     public List<String> getHeaders() {
-        if (headerTexts != null) {
-            return headerTexts;
+        if (headerTexts.size() == 0) {
+            List<UIObject> headerCells = headers.getChildren();
+            IntStream.range(0, headerCells.size())
+                    .forEach(i -> headerTexts.add(headerCells.get(i).getTextContent()));
         }
-        List<UIObject> headerCells = headers.getChildren();
-        headerTexts = IntStream.range(0, headerCells.size())
-                .mapToObj(i -> headerCells.get(i).getTextContent())
-                .collect(Collectors.toList());
         return headerTexts;
     }
 
     @Override
     public void invalidate(){
         super.invalidate();
-        children = null;
-        headerTexts = null;
+        headerTexts.clear();
     }
 
     public int getIndex(String key) {

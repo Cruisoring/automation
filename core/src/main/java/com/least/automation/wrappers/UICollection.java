@@ -9,10 +9,7 @@ import org.openqa.selenium.By;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -108,22 +105,19 @@ public class  UICollection<T extends UIObject> extends UIObject {
         this(context.parent, context.locator, null, UIObject.UIObjectClass, childrenBy);
     }
 
-    protected List<T> children = null;
+    protected final List<T> children = new ArrayList<>();
 
     public List<T> getChildren() {
 
         return Executor.tryGet(()-> {
-            if (children == null || children.size()==0) {
+            if (children.size()==0) {
                 T aChild = factory.create(this, null);
                 int childCount = Executor.tryGet(()->aChild.getElementsCount(),
                         defaultWaitChildrenMills/DefaultRetryIntervalMills,
                         DefaultRetryIntervalMills, i -> i>0);
 
-                children=IntStream.range(0, childCount)
-                        .mapToObj(i -> (T)factory.create(this, i))
-                        .collect(Collectors.toList());
-//                T last = children.get(childCount-1);
-//                last.isDisplayed();
+                IntStream.range(0, childCount)
+                        .forEach(i -> children.add((T)factory.create(this, i)));
             }
             return children;
         });
@@ -251,4 +245,9 @@ public class  UICollection<T extends UIObject> extends UIObject {
         return false;
     }
 
+    @Override
+    public void invalidate(){
+        super.invalidate();
+        children.clear();
+    }
 }

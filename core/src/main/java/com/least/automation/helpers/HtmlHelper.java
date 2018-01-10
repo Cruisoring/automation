@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 
 public class HtmlHelper {
     public final static String URIReservedChars = "!*'();:@&=+$,/?%#[]";
+    public final static boolean imageAsBase64;
     public final static Map<String, String> escapedChars = new HashMap<>();
     public final static By RootBy = By.tagName("html");
     public final static By BodyBy = By.tagName("body");
@@ -37,6 +38,9 @@ public class HtmlHelper {
             char ch = URIReservedChars.charAt(i);
             escapedChars.put(sub,  "%" + String.format("%02x", (int)ch));
         }
+
+        String imageAsBase64Value = System.getProperty("imageAsBase64");
+        imageAsBase64 = imageAsBase64Value != null && Boolean.getBoolean(imageAsBase64Value);
 
         if (!Files.exists(booksDirectory)){
             try {
@@ -251,6 +255,17 @@ public class HtmlHelper {
             Logger.W(ex);
             return null;
         }
+    }
+
+    public int saveTopics(){
+        int count = 0;
+        for (URL chapterUrl : topics) {
+//            if(!chapterUrl.toString().contains("9781680502794/f_0005.xhtml#d24e111"))
+//                continue;
+            if(null != saveChapter(chapterUrl, null))
+                count++;
+        }
+        return count;
     }
 
     private String replaceChapterLinks(UIObject.Collection content) {

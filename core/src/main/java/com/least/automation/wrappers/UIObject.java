@@ -79,7 +79,6 @@ public class UIObject implements IUIObject {
 
     @Override
     public void invalidate(){
-//        parent.invalidate();
         element = null;
     }
 

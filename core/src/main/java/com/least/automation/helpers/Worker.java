@@ -20,6 +20,7 @@ import java.net.URL;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -194,7 +195,7 @@ public class Worker implements AutoCloseable, WorkingContext {
         return (boolean) image.executeScript(replaceImageAsBase64Script);
     }
 
-    public final Map<Class<? extends Screen>, Screen> screens = new HashMap<>();
+    public final Map<Class<? extends Screen>, Screen> screens = new ConcurrentHashMap<>();
 
     public <T extends Screen> T getScreen(Class<T> screenClass) {
         if (screens.containsKey(screenClass)) {
@@ -314,7 +315,7 @@ public class Worker implements AutoCloseable, WorkingContext {
         Boolean isReady = false;
 //        try (Logger.Timer timer = Logger.M()) {
         final BooleanSupplier evaluator = () ->
-                expectedStates.contains(getReadyState()) || isAjaxDone();
+                expectedStates.contains(getReadyState());
         isReady = Executor.testUntil(evaluator, timeoutMillis);
 //        } catch (Exception e) {
 //        }
@@ -346,6 +347,7 @@ public class Worker implements AutoCloseable, WorkingContext {
 
     @Override
     public void invalidate() {
+        screens.clear();
     }
 
     @Override
