@@ -260,7 +260,7 @@ public class HtmlHelper {
     public int saveTopics(){
         int count = 0;
         for (URL chapterUrl : topics) {
-//            if(!chapterUrl.toString().contains("9781680502794/f_0005.xhtml#d24e111"))
+//            if(!chapterUrl.toString().contains("012"))
 //                continue;
             if(null != saveChapter(chapterUrl, null))
                 count++;
@@ -279,7 +279,8 @@ public class HtmlHelper {
                 .stream()
                 .map(e -> StringExtensions.valueOfAttribute(e, "href"))
                 .distinct()
-                .filter(href -> href != null && !href.contains("#"))
+                .filter(href -> href != null && !href.contains("#") &&
+                        (!href.startsWith("http") || href.startsWith(rootUrlPath)))
                 .collect(Collectors.toList());
 
         Map<String, URL> urlMap = hrefs.stream()

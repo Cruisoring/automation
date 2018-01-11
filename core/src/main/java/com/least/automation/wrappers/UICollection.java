@@ -163,6 +163,14 @@ public class  UICollection<T extends UIObject> extends UIObject {
         return result;
     }
 
+    public <V> T get(Function<T, V> valueExtractor, Predicate<V> valuePredicate){
+        final List<T> all = getChildren();
+        int index = IntStream.range(0, all.size())
+                .filter(i -> valuePredicate.test(valueExtractor.apply(all.get(i))))
+                .findFirst().orElse(-1);
+        return index < 0 ? null : all.get(index);
+    }
+
     public int indexOf(Predicate<T> predicate) {
         List<T> all = getChildren();
         return IntStream.range(0, all.size())

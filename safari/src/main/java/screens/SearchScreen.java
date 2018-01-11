@@ -30,11 +30,11 @@ public class SearchScreen extends Screen {
         resultItem firstResult = resultItems.get(0);
         waitScreenVisible();
         search.enterText(bookname);
-//        if(searchButton.isVisible())
-//            searchButton.click();
 
         firstResult.waitChanges(o -> o.getAllText());
-        firstResult = resultItems.get( r -> StringExtensions.containsAllIgnoreCase(r.bookTitle.getAllText(), keys));
+        firstResult = resultItems.get(r -> r.bookTitle.getTextContent().trim(), t -> t.equalsIgnoreCase(bookname));
+        if(firstResult == null)
+            firstResult = resultItems.get( r -> StringExtensions.containsAllIgnoreCase(r.bookTitle.getAllText(), keys));
         String bookTitle = firstResult.bookTitle.getAllText().trim();
         Logger.I("book found: " + bookTitle);
 
