@@ -41,7 +41,7 @@ public class Screen implements WorkingContext {
     public static TupleRepository2.TupleKeys1<Class<? extends Screen>, FunctionThrowable<Worker, ? extends Screen>, Boolean>
             screenRepository =
             TupleRepository2.fromKeys1(screenClass -> {
-                Constructor constructor = screenClass.getConstructor(Worker.class);
+                Constructor constructor = screenClass.getDeclaredConstructor(Worker.class);
                 constructor.setAccessible(true);
                 FunctionThrowable<Worker, ? extends Screen> factory = worker -> (Screen) constructor.newInstance(worker);
                 return Tuple.create(factory, false);

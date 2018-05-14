@@ -9,9 +9,9 @@
 
     <modules>
         <module>core</module>
-        <module>cucumber</module>
         <module>testMannings</module>
         <module>safari</module>
+        <module>google</module>
     </modules>
 
     <name>automation aggregator</name>

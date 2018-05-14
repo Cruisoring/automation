@@ -63,8 +63,8 @@ public class Worker implements AutoCloseable, WorkingContext {
 
     public static Worker getAvailable(DriverType... type) {
         if (singleton == null) {
-            singleton = getGhostDriverPlayer(null);
-//            singleton = getChromePlayer(null);
+//            singleton = getGhostDriverPlayer(null);
+            singleton = getChromePlayer(null);
         }
         return singleton;
     }
@@ -180,7 +180,7 @@ public class Worker implements AutoCloseable, WorkingContext {
         if (screens.containsKey(screenClass)) {
             return (T) screens.get(screenClass);
         }
-        T instance = (T) Screen.getScreenFactory(screenClass).apply(this);
+        T instance = (T) Screen.screenRepository.getFirst(screenClass).orElse(null).apply(this);
         if (instance != null) {
             screens.put(screenClass, instance);
         }
