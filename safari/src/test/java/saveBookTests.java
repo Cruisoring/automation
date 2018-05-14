@@ -1,7 +1,7 @@
-import com.least.automation.helpers.HtmlHelper;
-import com.least.automation.helpers.Logger;
-import com.least.automation.helpers.ResourceHelper;
-import com.least.automation.helpers.Worker;
+import io.github.Cruisoring.helpers.HtmlHelper;
+import io.github.Cruisoring.helpers.Logger;
+import io.github.Cruisoring.helpers.ResourceHelper;
+import io.github.Cruisoring.helpers.Worker;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 import screens.LoginScreen;

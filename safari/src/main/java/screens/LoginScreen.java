@@ -1,10 +1,10 @@
 package screens;
 
-import com.least.automation.helpers.Worker;
-import com.least.automation.wrappers.Screen;
-import com.least.automation.wrappers.UICheckBox;
-import com.least.automation.wrappers.UIEdit;
-import com.least.automation.wrappers.UIObject;
+import io.github.Cruisoring.helpers.Worker;
+import io.github.Cruisoring.wrappers.Screen;
+import io.github.Cruisoring.wrappers.UICheckBox;
+import io.github.Cruisoring.wrappers.UIEdit;
+import io.github.Cruisoring.wrappers.UIObject;
 import org.openqa.selenium.By;
 
 public class LoginScreen extends Screen {

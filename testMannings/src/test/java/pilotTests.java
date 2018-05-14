@@ -1,4 +1,4 @@
-import com.least.automation.helpers.Worker;
+import io.github.Cruisoring.helpers.Worker;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 import screens.baseScreen;

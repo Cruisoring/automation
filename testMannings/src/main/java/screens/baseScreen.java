@@ -1,8 +1,8 @@
 package screens;
 
-import com.least.automation.helpers.Worker;
-import com.least.automation.wrappers.Screen;
-import com.least.automation.wrappers.UIObject;
+import io.github.Cruisoring.helpers.Worker;
+import io.github.Cruisoring.wrappers.Screen;
+import io.github.Cruisoring.wrappers.UIObject;
 import components.bookFull;
 import components.topBars;
 import org.openqa.selenium.By;

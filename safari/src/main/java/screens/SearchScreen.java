@@ -1,12 +1,12 @@
 package screens;
 
-import com.least.automation.helpers.Logger;
-import com.least.automation.helpers.StringExtensions;
-import com.least.automation.helpers.Worker;
-import com.least.automation.wrappers.Screen;
-import com.least.automation.wrappers.UICollection;
-import com.least.automation.wrappers.UIEdit;
-import com.least.automation.wrappers.UIObject;
+import io.github.Cruisoring.helpers.Logger;
+import io.github.Cruisoring.helpers.StringExtensions;
+import io.github.Cruisoring.helpers.Worker;
+import io.github.Cruisoring.wrappers.Screen;
+import io.github.Cruisoring.wrappers.UICollection;
+import io.github.Cruisoring.wrappers.UIEdit;
+import io.github.Cruisoring.wrappers.UIObject;
 import components.resultItem;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;

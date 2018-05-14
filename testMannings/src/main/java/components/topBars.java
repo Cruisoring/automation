@@ -1,7 +1,7 @@
 package components;
 
-import com.least.automation.interfaces.WorkingContext;
-import com.least.automation.wrappers.UIObject;
+import io.github.Cruisoring.interfaces.WorkingContext;
+import io.github.Cruisoring.wrappers.UIObject;
 import org.openqa.selenium.By;
 
 public class topBars {

@@ -1,9 +1,9 @@
 package screens;
 
-import com.least.automation.helpers.ResourceHelper;
-import com.least.automation.helpers.Worker;
-import com.least.automation.wrappers.Screen;
-import com.least.automation.wrappers.UIObject;
+import io.github.Cruisoring.helpers.ResourceHelper;
+import io.github.Cruisoring.helpers.Worker;
+import io.github.Cruisoring.wrappers.Screen;
+import io.github.Cruisoring.wrappers.UIObject;
 import org.openqa.selenium.By;
 
 import java.net.URL;
