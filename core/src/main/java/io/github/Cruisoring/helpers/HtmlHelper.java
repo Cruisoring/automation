@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 
 public class HtmlHelper {
     public final static String URIReservedChars = "!*'();:@&=+$,/?%#[]";
+    public final static boolean imageAsBase64;
     public final static Map<String, String> escapedChars = new HashMap<>();
     public final static By RootBy = By.tagName("html");
     public final static By BodyBy = By.tagName("body");
@@ -37,6 +38,9 @@ public class HtmlHelper {
             char ch = URIReservedChars.charAt(i);
             escapedChars.put(sub,  "%" + String.format("%02x", (int)ch));
         }
+
+        String imageAsBase64Value = System.getProperty("imageAsBase64");
+        imageAsBase64 = imageAsBase64Value != null && Boolean.getBoolean(imageAsBase64Value);
 
         if (!Files.exists(booksDirectory)){
             try {
@@ -188,11 +192,17 @@ public class HtmlHelper {
         Map<String, String> hrefTitleMap = new HashMap<>();
         final String rootUrlPath = rootUrl.getPath();
         for (UIObject link : links.getChildren()) {
-            String href = link.getAttribute("href");
+            String href = link.getAttribute("href").trim();
             URL url = getUrl(href);
 
             if(href.startsWith("#") || !url.getPath().contains(rootUrlPath))
                 continue;
+
+            int index = href.indexOf('#');
+            if(index != -1){
+                href = href.substring(0, index);
+                url = getUrl(href);
+            }
 
             if(!hrefTitleMap.containsKey(href)){
                 topics.add(url);
@@ -247,6 +257,17 @@ public class HtmlHelper {
         }
     }
 
+    public int saveTopics(){
+        int count = 0;
+        for (URL chapterUrl : topics) {
+//            if(!chapterUrl.toString().contains("012"))
+//                continue;
+            if(null != saveChapter(chapterUrl, null))
+                count++;
+        }
+        return count;
+    }
+
     private String replaceChapterLinks(UIObject.Collection content) {
         List<String> knownUrls = StringExtensions.sortedListByLengthDesc(
                 mappedURLs.keySet().stream()
@@ -258,7 +279,8 @@ public class HtmlHelper {
                 .stream()
                 .map(e -> StringExtensions.valueOfAttribute(e, "href"))
                 .distinct()
-                .filter(href -> href != null && !href.startsWith("#"))
+                .filter(href -> href != null && !href.contains("#") &&
+                        (!href.startsWith("http") || href.startsWith(rootUrlPath)))
                 .collect(Collectors.toList());
 
         Map<String, URL> urlMap = hrefs.stream()
@@ -271,15 +293,6 @@ public class HtmlHelper {
         for (String ref : hrefs) {
             String href = ref;
             URL url = urlMap.get(href);
-            if(!url.getPath().contains(rootUrlPath))
-                continue;
-
-            int index = href.indexOf('#');
-            if (index != -1){
-                href = href.substring(0, index);
-            }
-            if(tokens.containsKey(href))
-                continue;
 
             String matched = StringExtensions.firstStartsWith(getUrl(href).toString(), knownUrls);
             if (matched == null)
