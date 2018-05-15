@@ -101,6 +101,7 @@ public class  UICollection<T extends UIObject> extends UIObject {
         factory = getChildFactory(childClass, childrenBy);
     }
 
+
     public UICollection(UIObject context, By childrenBy) {
         this(context.parent, context.locator, null, UIObject.UIObjectClass, childrenBy);
     }

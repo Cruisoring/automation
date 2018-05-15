@@ -235,6 +235,11 @@ public class Worker implements AutoCloseable, WorkingContext {
         return gotoUrl(url.toString());
     }
 
+    public void goBack(){
+        driver.navigate().back();
+        waitPageReady();
+    }
+
     public String switchTo(String framePath) {
         return switchTo(framePath, DefaultSwitchFrameRetry);
     }

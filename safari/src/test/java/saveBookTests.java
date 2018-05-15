@@ -1,9 +1,9 @@
-import io.github.Cruisoring.helpers.HtmlHelper;
-import io.github.Cruisoring.helpers.Logger;
-import io.github.Cruisoring.helpers.ResourceHelper;
-import io.github.Cruisoring.helpers.Worker;
+import io.github.Cruisoring.helpers.*;
 import org.testng.Assert;
-import org.testng.annotations.*;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 import screens.LoginScreen;
 import screens.SearchScreen;
 import screens.ViewScreen;
