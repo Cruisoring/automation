@@ -53,20 +53,36 @@ public class Worker implements AutoCloseable, WorkingContext {
 
     private final static Proxy proxy;
 
+    private static List<String> proxies = new ArrayList<String>(Arrays.asList(
+            "10.140.83.30:8080", "10.120.3.30:8080", "10.160.5.30:8080", "10.241.22.111:8080",//
+            "10.240.12.20:8080", "10.150.14.30:8080"));
+
+    public static Proxy getNextProxy(){
+        Proxy theProxy = null;
+        if (proxies.isEmpty()) {
+            String proxyHost = System.getenv("user.http.proxyHost");
+            if (proxyHost != null) {
+                String httpProxy = String.format("%s:%s", proxyHost, System.getenv("user.http.proxyPort"));
+                theProxy = new Proxy();
+                theProxy.setHttpProxy(httpProxy);
+            }
+        } else {
+            Random random = new Random();
+            int index =random.nextInt(proxies.size());
+            theProxy = new Proxy();
+            theProxy.setHttpProxy(proxies.get(index));
+        }
+        Logger.I("Proxy is set to: %s", theProxy);
+        return theProxy;
+    }
+
     static {
         Properties properties = ResourceHelper.getProperties("driver.properties");
         for (String propName : properties.stringPropertyNames()) {
             System.setProperty(propName, properties.getProperty(propName));
         }
 
-        String proxyHost = System.getenv("user.http.proxyHost");
-        if (proxyHost != null) {
-            String httpProxy = String.format("%s:%s", proxyHost, System.getenv("user.http.proxyPort"));
-            proxy = new Proxy();
-            proxy.setHttpProxy(httpProxy);
-        } else {
-            proxy = null;
-        }
+        proxy = getNextProxy();
     }
 
     public static Map<String, String> mappedURLs = new HashMap<>();
@@ -109,6 +125,7 @@ public class Worker implements AutoCloseable, WorkingContext {
             prefs.put("profile.password_manager_enabled", true);
 
             options.setExperimentalOption("prefs", prefs);
+            options.setProxy(getNextProxy());
 //            if(proxy != null)
 //                options.setProxy(proxy);
 //            else
