@@ -51,11 +51,16 @@ public class Worker implements AutoCloseable, WorkingContext {
     private static final List<WebDriver> drivers = new ArrayList<>();
     private static int driverCount = 0;
 
-    private final static Proxy proxy;
+//    private final static Proxy proxy;
 
     private static List<String> proxies = new ArrayList<String>(Arrays.asList(
-            "10.140.83.30:8080", "10.120.3.30:8080", "10.160.5.30:8080", "10.241.22.111:8080",//
-            "10.240.12.20:8080", "10.150.14.30:8080"));
+            "200.89.98.38:42619", "159.65.9.66:3128", "103.78.213.147:80", "159.89.192.39:3128",
+            "207.154.197.214:8888", "46.52.220.238:8080", "206.189.91.246:80", "103.241.205.66:8080",
+            "51.15.227.220:3128", "34.213.199.191:80", "35.187.234.106:3128", "194.126.183.141:53218",
+            "213.136.77.246:80", "47.52.231.140:8080", "195.201.97.32:8888", "159.65.0.210:3128",
+            "80.211.178.125:8080", "77.52.188.230:3128","147.75.113.107:8080", "5.189.133.231:80"));
+//            "10.140.83.30:8080", "10.120.3.30:8080", "10.160.5.30:8080", "10.241.22.111:8080",//
+//            "10.240.12.20:8080", "10.150.14.30:8080"));
 
     public static Proxy getNextProxy(){
         Proxy theProxy = null;
@@ -82,7 +87,7 @@ public class Worker implements AutoCloseable, WorkingContext {
             System.setProperty(propName, properties.getProperty(propName));
         }
 
-        proxy = getNextProxy();
+//        proxy = getNextProxy();
     }
 
     public static Map<String, String> mappedURLs = new HashMap<>();
@@ -141,9 +146,7 @@ public class Worker implements AutoCloseable, WorkingContext {
             options = new DesiredCapabilities();
             options.setJavascriptEnabled(true);
             options.setCapability("takesScreenshot", false);
-            if (proxy != null){
-                options.setCapability(CapabilityType.PROXY, proxy);
-            }
+            options.setCapability(CapabilityType.PROXY, getNextProxy());
         }
 
         PhantomJSDriver driver = new PhantomJSDriver(options);
@@ -391,7 +394,7 @@ public class Worker implements AutoCloseable, WorkingContext {
         } catch (Exception ex) {
             Logger.W(ex);
         } finally {
-//            driver.quit();
+            driver.quit();
         }
     }
 

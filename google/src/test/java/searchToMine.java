@@ -1,3 +1,4 @@
+import io.github.Cruisoring.helpers.Logger;
 import io.github.Cruisoring.helpers.ResourceHelper;
 import io.github.Cruisoring.helpers.Worker;
 import org.openqa.selenium.WebDriver;
@@ -70,6 +71,7 @@ public class searchToMine {
         do{
             if(searchScreen.openResultPage(expectedTitleKeys, expectedUrl)) {
                 articleScreen.read();
+                successCount++;
                 break;
             }
             if(!searchScreen.hasMorePage())
@@ -104,6 +106,7 @@ public class searchToMine {
         do{
             if(searchScreen.openResultPage(expectedTitleKeys, expectedUrl)) {
                 articleScreen.read();
+                successCount++;
                 break;
             }
             if(!searchScreen.hasMorePage())
@@ -113,20 +116,32 @@ public class searchToMine {
         }while (true);
     }
 
+    int successCount = 0;
+    int testCount = 0;
     @Test
-    public void runEndlessly() throws Exception{
-        while (true){
-            if(worker == null){
-                worker = Worker.getAvailable();
-                searchScreen = worker.getScreen(SearchScreen.class);
-                articleScreen = worker.getScreen(ArticleScreen.class);
+    public void runEndlessly(){
+
+        try {
+            while (true) {
+                if (worker == null) {
+                    worker = Worker.getAvailable();
+                    searchScreen = worker.getScreen(SearchScreen.class);
+                    articleScreen = worker.getScreen(ArticleScreen.class);
+                }
+                testCount++;
+                searchThrowable();
+                searchTuple();
+                if (worker != null) {
+                    worker.close();
+                    worker = null;
+                }
             }
-            searchThrowable();
-            searchTuple();
-            if(worker != null){
-                worker.close();
-                worker = null;
-            }
+        }catch (Exception ex){
+            Logger.E(ex);
+            Logger.I("Try %d, %d success", testCount, successCount);
+            runEndlessly();
+        }finally {
+            Logger.I("Try %d, %d success", testCount, successCount);
         }
     }
 }
