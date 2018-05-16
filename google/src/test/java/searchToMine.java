@@ -1,5 +1,6 @@
 import io.github.Cruisoring.helpers.ResourceHelper;
 import io.github.Cruisoring.helpers.Worker;
+import org.openqa.selenium.WebDriver;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
@@ -7,8 +8,7 @@ import org.testng.annotations.Test;
 import screens.ArticleScreen;
 import screens.SearchScreen;
 
-import java.util.Properties;
-import java.util.Random;
+import java.util.*;
 
 @Test
 public class searchToMine {
@@ -49,17 +49,19 @@ public class searchToMine {
 
     @Test
     public void searchThrowable() {
-        String[] keywords = new String[]{"functional interface", "lambda", "lambda expression", "checked", "unchecked", "exception", "exception in stream", "throws in stream", "throwable"};
+        List<String> keywords = new ArrayList<String>( Arrays.asList("functional interface", "lambda throws",
+                "lambda exception", "checked exception", "unchecked exception", "exception in stream", "throws in stream", "throwable lambda"));
         String[] expectedTitleKeys = new String[]{"functionExtensions", "function extension"};
         String expectedUrl ="codeproject.com/Articles/1231137";
 
         Random random = new Random();
         StringBuilder sb = new StringBuilder("java 8 ");
-        int count = keywords.length;
+        int count = keywords.size();
         int index = random.nextInt(count);
-        sb.append(" " + keywords[index]);
-        index += random.nextInt(count-1);
-        sb.append(" " + keywords[index % count]);
+        sb.append(" " + keywords.get(index));
+        keywords.remove(index);
+        index = random.nextInt(keywords.size());
+        sb.append(" " + keywords.get(index));
 
         String keyword = sb.toString();
         worker.gotoUrl(startUrl);
@@ -80,17 +82,20 @@ public class searchToMine {
 
     @Test
     public void searchTuple() {
-        String[] keywords = new String[]{"functional programming", "tuple", "tuples", "Triple", "Dual", "Pair", "immutable data", "strong-typed values", "tuplets", "autocloseable", "comparable"};
+        List<String> keywords = new ArrayList<String>( Arrays.asList("functional programming", "tuple", "tuples", "multi different objects",
+                "Data Pair", "Immutable set", "immutable data", "strong-typed values", "tuplets", "autocloseable data set", "comparable",
+                "multiple return"));
         String[] expectedTitleKeys = new String[]{"functionExtensions", "function extension"};
         String expectedUrl ="codeproject.com/Articles/1232570";
 
         Random random = new Random();
-        StringBuilder sb = new StringBuilder("java ");
-        int count = keywords.length;
+        StringBuilder sb = new StringBuilder("java 8 ");
+        int count = keywords.size();
         int index = random.nextInt(count);
-        sb.append(" " + keywords[index]);
-        index += random.nextInt(count-1);
-        sb.append(" " + keywords[index % count]);
+        sb.append(" " + keywords.get(index));
+        keywords.remove(index);
+        index = random.nextInt(keywords.size());
+        sb.append(" " + keywords.get(index));
 
         String keyword = sb.toString();
         worker.gotoUrl(startUrl);
@@ -109,10 +114,19 @@ public class searchToMine {
     }
 
     @Test
-    public void runEndlessly(){
+    public void runEndlessly() throws Exception{
         while (true){
+            if(worker == null){
+                worker = Worker.getAvailable();
+                searchScreen = worker.getScreen(SearchScreen.class);
+                articleScreen = worker.getScreen(ArticleScreen.class);
+            }
             searchThrowable();
             searchTuple();
+            if(worker != null){
+                worker.close();
+                worker = null;
+            }
         }
     }
 }

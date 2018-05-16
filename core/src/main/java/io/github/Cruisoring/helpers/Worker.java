@@ -74,7 +74,8 @@ public class Worker implements AutoCloseable, WorkingContext {
     private static Worker singleton = null;
 
     public static Worker getAvailable(DriverType... type) {
-        if (singleton == null) {
+//        if (singleton == null)
+        {
 //            singleton = getGhostDriverPlayer(null);
             singleton = getChromePlayer(null);
         }
@@ -373,7 +374,7 @@ public class Worker implements AutoCloseable, WorkingContext {
         } catch (Exception ex) {
             Logger.W(ex);
         } finally {
-            driver.quit();
+//            driver.quit();
         }
     }
 
