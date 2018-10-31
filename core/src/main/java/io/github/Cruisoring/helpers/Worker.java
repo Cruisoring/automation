@@ -130,7 +130,7 @@ public class Worker implements AutoCloseable, WorkingContext {
             prefs.put("profile.password_manager_enabled", true);
 
             options.setExperimentalOption("prefs", prefs);
-            options.setProxy(getNextProxy());
+//            options.setProxy(getNextProxy());
 //            if(proxy != null)
 //                options.setProxy(proxy);
 //            else
@@ -146,7 +146,7 @@ public class Worker implements AutoCloseable, WorkingContext {
             options = new DesiredCapabilities();
             options.setJavascriptEnabled(true);
             options.setCapability("takesScreenshot", false);
-            options.setCapability(CapabilityType.PROXY, getNextProxy());
+//            options.setCapability(CapabilityType.PROXY, getNextProxy());
         }
 
         PhantomJSDriver driver = new PhantomJSDriver(options);

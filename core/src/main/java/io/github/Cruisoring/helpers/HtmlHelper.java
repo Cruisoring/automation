@@ -33,16 +33,16 @@ public class HtmlHelper {
     protected static Path booksDirectory = Paths.get("C:/test/books/");
 
     static {
-        for (int i=0; i< URIReservedChars.length(); i++) {
-            String sub = URIReservedChars.substring(i, i+1);
+        for (int i = 0; i < URIReservedChars.length(); i++) {
+            String sub = URIReservedChars.substring(i, i + 1);
             char ch = URIReservedChars.charAt(i);
-            escapedChars.put(sub,  "%" + String.format("%02x", (int)ch));
+            escapedChars.put(sub, "%" + String.format("%02x", (int) ch));
         }
 
         String imageAsBase64Value = System.getProperty("imageAsBase64");
         imageAsBase64 = imageAsBase64Value != null && Boolean.getBoolean(imageAsBase64Value);
 
-        if (!Files.exists(booksDirectory)){
+        if (!Files.exists(booksDirectory)) {
             try {
                 booksDirectory = Files.createDirectories(booksDirectory);
             } catch (IOException e) {
@@ -51,33 +51,33 @@ public class HtmlHelper {
         }
     }
 
-    public static String getFilename(String filename, String suffix){
+    public static String getFilename(String filename, String suffix) {
         filename = filename.trim().replaceAll("\\s+", " ");
         return (filename.endsWith(suffix)) ? filename : filename + suffix;
     }
 
-    public static String percentageEncoding(String urlString){
+    public static String percentageEncoding(String urlString) {
         return StringExtensions.replaceAll(urlString, escapedChars);
     }
 
     public static String replaceImgWithBase64(String html, String source, String base64) {
         int startIndex = source.indexOf("src=");
         startIndex = StringExtensions.indexOfAny(source, startIndex, '"', '\'');
-        int endIndex = source.indexOf(source.charAt(startIndex), startIndex+1);
-        String replacement = source.substring(0, startIndex+1) + base64 + source.substring(endIndex);
+        int endIndex = source.indexOf(source.charAt(startIndex), startIndex + 1);
+        String replacement = source.substring(0, startIndex + 1) + base64 + source.substring(endIndex);
         return html.replace(source, replacement);
     }
 
-    public static String replaceLink(String html, String source, String filename){
+    public static String replaceLink(String html, String source, String filename) {
         int startIndex = source.indexOf("href=");
         startIndex = StringExtensions.indexOfAny(source, startIndex, '"', '\'');
-        int endIndex = source.indexOf(source.charAt(startIndex), startIndex+1);
-        if(filename == null) {
-            filename = source.substring(source.indexOf('>', endIndex)+1);
+        int endIndex = source.indexOf(source.charAt(startIndex), startIndex + 1);
+        if (filename == null) {
+            filename = source.substring(source.indexOf('>', endIndex) + 1);
             filename = filename.substring(0, filename.indexOf("</a>"));
             filename = filename.trim() + ".html";
         }
-        String replacement = source.substring(0, startIndex+1) + filename + source.substring(endIndex);
+        String replacement = source.substring(0, startIndex + 1) + filename + source.substring(endIndex);
         return html.replace(source, replacement);
     }
 
@@ -91,8 +91,8 @@ public class HtmlHelper {
     public final List<URL> topics = new ArrayList<>();
     File bookRootFolder;
 
-    public HtmlHelper(URL rootUrl, Worker worker, Function<String, String> filenameGenerator){
-        if(worker == null || rootUrl == null)
+    public HtmlHelper(URL rootUrl, Worker worker, Function<String, String> filenameGenerator) {
+        if (worker == null || rootUrl == null)
             throw new ExceptionInInitializerError("Arguments cannot be null.");
 
         this.filenameGenerator = (filenameGenerator == null) ? DefaultFilenameGenerator : filenameGenerator;
@@ -101,11 +101,11 @@ public class HtmlHelper {
         this.rootUrl = rootUrl;
     }
 
-    public HtmlHelper(URL rootUrl, Worker worker){
+    public HtmlHelper(URL rootUrl, Worker worker) {
         this(rootUrl, worker, null);
     }
 
-    private URL getUrl(String href){
+    private URL getUrl(String href) {
         URL url = null;
         try {
             url = new URL(rootUrl, href);
@@ -115,18 +115,18 @@ public class HtmlHelper {
         return url;
     }
 
-    public Path saveIndex(String bookname){
+    public Path saveIndex(String bookname) {
         return saveIndex(bookname, null, null);
     }
 
-    public Path saveIndex(String bookname, UIObject.Collection content){
+    public Path saveIndex(String bookname, UIObject.Collection content) {
         return saveIndex(bookname, content, null);
     }
 
     //TODO: using Pattern instead of UICollection ?
-    public Path saveIndex(String bookname, UIObject.Collection content, String indexFilename){
+    public Path saveIndex(String bookname, UIObject.Collection content, String indexFilename) {
         Path bookRoot = Paths.get(booksDirectory.toString(), bookname);
-        if (!Files.exists(bookRoot)){
+        if (!Files.exists(bookRoot)) {
             try {
                 bookRoot = Files.createDirectories(bookRoot);
             } catch (IOException e) {
@@ -166,16 +166,16 @@ public class HtmlHelper {
         return html;
     }
 
-    private Map<String,String> getImageTokens(UIObject content) {
-        Map<String,String> tokens = new HashMap<>();
+    private Map<String, String> getImageTokens(UIObject content) {
+        Map<String, String> tokens = new HashMap<>();
         UIObject.Collection images = new UIObject.Collection(content, ImageBy);
-        for(UIObject image: images.getChildren()){
+        for (UIObject image : images.getChildren()) {
             String src = image.getAttribute("src");
             URL imageUrl = getUrl(src);
-            if(imageUrl == null)
+            if (imageUrl == null)
                 continue;
 
-            if(mappedImages.containsKey(imageUrl)){
+            if (mappedImages.containsKey(imageUrl)) {
                 tokens.put(src, mappedImages.get(imageUrl));
             } else {
                 String base64 = image.asBase64();
@@ -195,21 +195,21 @@ public class HtmlHelper {
             String href = link.getAttribute("href").trim();
             URL url = getUrl(href);
 
-            if(href.startsWith("#") || !url.getPath().contains(rootUrlPath))
+            if (href.startsWith("#") || !url.getPath().contains(rootUrlPath))
                 continue;
 
             int index = href.indexOf('#');
-            if(index != -1){
+            if (index != -1) {
                 href = href.substring(0, index);
                 url = getUrl(href);
             }
 
-            if(!hrefTitleMap.containsKey(href)){
+            if (!hrefTitleMap.containsKey(href)) {
                 topics.add(url);
                 String title = StringExtensions.removeAllCharacters(link.getAllText().trim(),
                         StringExtensions.WindowsSpecialCharacters)
                         .replaceAll("\\s+", " ");
-                if(StringUtils.isNotEmpty(title))
+                if (StringUtils.isNotEmpty(title))
                     hrefTitleMap.put(href, filenameGenerator.apply(title));
             }
         }
@@ -218,13 +218,13 @@ public class HtmlHelper {
         for (Map.Entry<String, String> entry : hrefTitleMap.entrySet()) {
             String relativePath = entry.getKey();
             URL url = getUrl(relativePath);
-            if(!mappedURLs.containsKey(url)){
+            if (!mappedURLs.containsKey(url)) {
                 String title = hrefTitleMap.get(relativePath);
                 mappedURLs.put(url, title);
             }
             String mapped = mappedURLs.get(url);
             String encoded = percentageEncoding(mapped);
-            if(!mapped.equals(encoded)){
+            if (!mapped.equals(encoded)) {
                 Logger.V("'%s' is encoded as '%s'", mapped, encoded);
             }
             tokens.put(relativePath, encoded);
@@ -234,8 +234,8 @@ public class HtmlHelper {
         return result;
     }
 
-    public Path saveChapter(URL url, UIObject.Collection content){
-        if(!mappedURLs.containsKey(url))
+    public Path saveChapter(URL url, UIObject.Collection content) {
+        if (!mappedURLs.containsKey(url))
             return null;
 
         worker.gotoUrl(url);
@@ -257,12 +257,12 @@ public class HtmlHelper {
         }
     }
 
-    public int saveTopics(){
+    public int saveTopics() {
         int count = 0;
         for (URL chapterUrl : topics) {
 //            if(!chapterUrl.toString().contains("012"))
 //                continue;
-            if(null != saveChapter(chapterUrl, null))
+            if (null != saveChapter(chapterUrl, null))
                 count++;
         }
         return count;
@@ -286,7 +286,7 @@ public class HtmlHelper {
         Map<String, URL> urlMap = hrefs.stream()
                 .collect(Collectors.toMap(
                         href -> href,
-                        href -> getUrl((String)href)
+                        href -> getUrl((String) href)
                 ));
 
         Map<String, String> tokens = new HashMap<>();
@@ -300,7 +300,7 @@ public class HtmlHelper {
             URL matchedUrl = getUrl(matched);
             String mapped = mappedURLs.get(matchedUrl);
             String encoded = percentageEncoding(mapped);
-            if(!mapped.equals(encoded)){
+            if (!mapped.equals(encoded)) {
                 Logger.V("'%s' is encoded as '%s'", mapped, encoded);
             }
             tokens.put(href, encoded);

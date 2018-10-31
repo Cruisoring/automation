@@ -2,7 +2,7 @@ package io.github.Cruisoring.wrappers;
 
 import io.github.Cruisoring.helpers.Logger;
 import io.github.Cruisoring.interfaces.WorkingContext;
-import org.apache.commons.text.StringEscapeUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Dimension;
