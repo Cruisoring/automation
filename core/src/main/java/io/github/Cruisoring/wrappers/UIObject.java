@@ -7,11 +7,13 @@ import io.github.Cruisoring.helpers.StringExtensions;
 import io.github.Cruisoring.helpers.Worker;
 import io.github.Cruisoring.interfaces.IUIObject;
 import io.github.Cruisoring.interfaces.WorkingContext;
+import org.apache.commons.lang3.StringUtils;
 import org.openqa.selenium.*;
 import org.openqa.selenium.interactions.Action;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.interactions.internal.Locatable;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
@@ -38,7 +40,8 @@ public class UIObject implements IUIObject {
     }
 
     protected static int DefaultGetElementRetryAttempts = 3;
-    protected static int DefaultRetryIntervalMills = 50;
+    protected static final int DefaultElementValidSeconds = 3;
+    protected static int DefaultRetryIntervalMills = 100;
     protected static int DefaultWaitEnabledMills = 3*1000;
     protected static int DefaultWaitChangesMills = 30*1000;
     protected static int DefaultWaitBeforeEvaluationMills = 3100;
@@ -58,6 +61,7 @@ public class UIObject implements IUIObject {
     public final Integer index;
 
     protected WebElement element;
+    protected LocalDateTime elementValidUntil = LocalDateTime.MIN;
 
     public UIObject(WorkingContext context, By by, Integer index) {
         if(context == null || by == null) {
@@ -85,17 +89,18 @@ public class UIObject implements IUIObject {
 
     @Override
     public synchronized WebElement getElement(){
-//        long start = System.currentTimeMillis();
+
         try {
-            if (element == null) {
+            if(LocalDateTime.now().isAfter(elementValidUntil) || element == null){
+                waitPageReady();
                 element = tryGetElement();
+                elementValidUntil = LocalDateTime.now().plusSeconds(DefaultElementValidSeconds);
             }
             element.isDisplayed();
         } catch (Exception ex) {
             invalidate();
             element = tryGetElement();
         }
-//        Logger.V("After %dms, getElement() %s null.", System.currentTimeMillis()-start, element==null ? "is":"isn't");
         return element;
     }
 
@@ -272,6 +277,7 @@ public class UIObject implements IUIObject {
 
     @Override
     public String getTextContent() {
+        waitPageReady();
         Object result = executeScript("return arguments[0].textContent;");
         return result == null ? null : result.toString();
     }
@@ -471,9 +477,19 @@ public class UIObject implements IUIObject {
 
     @Override
     public String toString(){
-        String result = String.format("%s(%s%s)", this.getClass().getSimpleName(), locator,
-                    index==null?"":"["+index+"]")
-                .replaceAll("By.cssSelector: ", "");
+        String result = String.format("%s(%s%s)",
+                this.getClass().getSimpleName(),
+                locator.toString().substring(locator.toString().indexOf(":")+1),
+                index == null ? "" : "[" + index + "]");
+
+        try {
+            if(element != null && StringUtils.isNotEmpty(element.getText())) {
+                result = String.format("%s%s = %s",
+                        this.getClass().getSimpleName(),
+                        index == null?"":"["+index+"]",
+                        element.getText());
+            }
+        } catch (Exception ex) {}
         return result;
     }
 
@@ -592,11 +608,10 @@ public class UIObject implements IUIObject {
     @Override
     public boolean click(int waitReadyMills){
         click();
-        if(waitReadyMills > 0) {
-            sleep(1000);
-            return worker.waitPageReady(waitReadyMills);
-        }
-        return false;
+        if(waitReadyMills < 0)
+            waitReadyMills = DefaultWaitChangesMills;
+        sleep(1000);
+        return worker.waitPageReady(waitReadyMills);
     }
 
     public void click(OnElement position) {

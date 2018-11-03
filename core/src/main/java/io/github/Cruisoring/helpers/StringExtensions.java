@@ -273,4 +273,21 @@ public class StringExtensions {
 //        keys = sortedListByLengthDesc(keys);
         return firstMatch(template, keys, String::endsWith);
     }
+
+    public static int asInt(String text, int defaultValue){
+        try {
+            return Integer.valueOf(text);
+        }catch (Exception ex){
+            return defaultValue;
+        }
+    }
+
+    public static float asFloat(String text, float defaultValue){
+        try {
+            return Float.valueOf(text);
+        }catch (Exception ex){
+            return defaultValue;
+        }
+    }
+
 }

@@ -5,10 +5,13 @@ import io.github.Cruisoring.helpers.Logger;
 import io.github.Cruisoring.helpers.StringExtensions;
 import io.github.Cruisoring.interfaces.Creatable;
 import io.github.Cruisoring.interfaces.WorkingContext;
+import io.github.cruisoring.Lazy;
+import org.apache.commons.lang3.StringUtils;
 import org.openqa.selenium.By;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -19,6 +22,7 @@ public class  UICollection<T extends UIObject> extends UIObject {
     public final static Class UICollectionClass = UICollection.class;
     public final static String defaultChildTextSeperator = "    ";
     public final static int defaultWaitChildrenMills = 5*1000;
+    public final static int DefaultChildrenValidSeconds = 10;
 
     public static String getClassesToken(Class... paramClasses){
         if(Arrays.stream(paramClasses).anyMatch(c -> c.isPrimitive()))
@@ -87,52 +91,67 @@ public class  UICollection<T extends UIObject> extends UIObject {
 
     protected final Creatable<T> factory;
 
-    public UICollection(WorkingContext context, By by, Integer index, Creatable<T> childFactory) {
-        super(context, by, index);
+    public UICollection(WorkingContext context, By by, Integer containerIndex, Creatable<T> childFactory) {
+        super(context, by, containerIndex);
         if (childFactory == null) {
             throw new NullPointerException("Factory method must be provided for UICollection!");
         }
         factory = childFactory;
     }
 
-    public UICollection(WorkingContext context, By by, Integer index, Class<? extends UIObject> childClass, By childrenBy){
-        super(context, by, index);
+    public UICollection(WorkingContext context, By by, Integer containerIndex, Class<? extends UIObject> childClass, By childrenBy){
+        this(context, by, containerIndex,
+                getChildFactory(childClass, childrenBy));
+    }
 
-        factory = getChildFactory(childClass, childrenBy);
+    public UICollection(WorkingContext context, By by, By childrenBy){
+        this(context, by, null,
+                getChildFactory(UIObject.UIObjectClass, childrenBy));
     }
 
 
     public UICollection(UIObject context, By childrenBy) {
-        this(context.parent, context.locator, null, UIObject.UIObjectClass, childrenBy);
+        this(context.parent, context.locator, childrenBy);
     }
 
     protected final List<T> children = new ArrayList<>();
+    private LocalDateTime childrenValidUntil = LocalDateTime.MIN;
+
+    private List<T> tryGetChildren() {
+        T aChild = factory.create(this, null);
+        int childCount = Executor.tryGet(()->aChild.getElementsCount(),
+                defaultWaitChildrenMills/DefaultRetryIntervalMills,
+                DefaultRetryIntervalMills, i -> i>0);
+
+        List<T> list = new ArrayList<>();
+        for(int i = 0; i<childCount; i++){
+            T child = (T)factory.create(this, i);
+            list.add(child);
+        }
+
+        return list;
+    }
 
     public List<T> getChildren() {
-
-        return Executor.tryGet(()-> {
-            if (children.size()==0) {
-                T aChild = factory.create(this, null);
-                int childCount = Executor.tryGet(()->aChild.getElementsCount(),
-                        defaultWaitChildrenMills/DefaultRetryIntervalMills,
-                        DefaultRetryIntervalMills, i -> i>0);
-
-                IntStream.range(0, childCount)
-                        .forEach(i -> children.add((T)factory.create(this, i)));
+        waitPageReady();
+        if(LocalDateTime.now().isBefore(childrenValidUntil) && !children.isEmpty()){
+            //Test if the last child is still valid
+            T last = children.get(children.size()-1);
+            //Assume the UICollection is still valid if last is displayed
+            if(last.isDisplayed()){
+                return children;
             }
-            return children;
-        });
+        }
+
+        children.clear();
+        children.addAll(tryGetChildren());
+        childrenValidUntil = LocalDateTime.now().plusSeconds(DefaultChildrenValidSeconds);
+        return children;
     }
 
     public int size(){
         return getChildren().size();
     }
-
-//    @Override
-//    public void invalidate(){
-//        super.invalidate();
-//        children = null;
-//    }
 
     public List<T> getFreshChildren() {
         invalidate();
@@ -146,6 +165,7 @@ public class  UICollection<T extends UIObject> extends UIObject {
     }
 
     public List<String> textContents(){
+        invalidate();
         return valuesOf(c -> c.getTextContent());
     }
 
@@ -154,15 +174,46 @@ public class  UICollection<T extends UIObject> extends UIObject {
         return child;
     }
 
-    public T get(Predicate<T> predicate) {
-        List<T> all = getChildren();
-        T result = all
-                .stream()
-                .filter(predicate)
-                .findFirst()
-                .orElse(null);
-        return result;
+    public T getFirst(){
+        int size = size();
+        return size == 0 ? null : children.get(0);
     }
+
+    public T getLast(){
+        int size = size();
+        return size == 0 ? null : children.get(size-1);
+    }
+
+    public T get(Executor.FunctionThrows<T, String> valueExtractor, Predicate<String>... predicates) {
+        List<T> all = getChildren();
+        int size = all.size();
+        //Lazy to handle potential exceptions by keep nulls
+        List<Lazy<String>> allStrings = all.stream()
+                .map(t -> new Lazy<String>(() -> valueExtractor.apply(t)))
+                .collect(Collectors.toList());
+
+        for(Predicate<String> predicate : predicates) {
+            for (int i = 0; i < size; i++) {
+                String text = allStrings.get(i).getValue();
+                if(predicate.test(text))
+                    return all.get(i);
+            }
+        }
+
+        return null;
+    }
+
+//    public T getAny(Predicate<T>... predicates) {
+//        List<T> all = getChildren();
+//        for(Predicate<T> predicate : predicates) {
+//            for (T each : all) {
+//                if(predicate.test(each))
+//                    return each;
+//            }
+//        }
+//
+//        return null;
+//    }
 
     public <V> T get(Function<T, V> valueExtractor, Predicate<V> valuePredicate){
         final List<T> all = getChildren();
@@ -186,10 +237,11 @@ public class  UICollection<T extends UIObject> extends UIObject {
 //    BiPredicate<T, String>[] predicates = new BiPredicate[] {equals, equalsIgnoreCase, contains, containsIgnoreCase};
 //
     public T get(String keyword) {
-        T result = get(t -> t.getTextContent().equals(keyword));
-        if (result == null){
-            result = get(t -> t.getAllText().contains(keyword));
-        }
+        T result = get(t -> t.getElement().getText(),
+                text -> StringUtils.equals(keyword, text)
+                , text -> StringUtils.equalsIgnoreCase(keyword, text)
+                , text -> StringUtils.containsIgnoreCase(text, keyword)
+        );
         return result;
     }
 
@@ -198,8 +250,16 @@ public class  UICollection<T extends UIObject> extends UIObject {
     }
 
     public T get(Function<T, String> extractor, Object... keys) {
-        T result = get(t-> StringExtensions.containsAll(extractor.apply(t), keys));
-        return result;
+        List<T> all = getChildren();
+        int size = all.size();
+        for (int i = 0; i < size; i++) {
+            T t = all.get(i);
+            String text = extractor.apply(t);
+            if(StringExtensions.containsAll(text, keys))
+                return t;
+        }
+
+        return null;
     }
 
 //    @Override

@@ -16,11 +16,16 @@ public class Navigator extends UIObject {
         subMenus = new UICollection(this, By.cssSelector("div.d_mega_sub li"));
     }
 
-    public void openSubMenu(String menuKey, String subMenuKey){
-        UIObject menu = menus.get(menuKey);
-        menu.click();
+    public void openMenu(String menuKeyword, String subMenuKeyword){
+        UIObject menu = menus.get(menuKeyword);
+        menu.mouseOver();
 
-        UIObject sub = subMenus.get(subMenuKey);
+        UIObject sub = subMenus.get(subMenuKeyword);
         sub.click();
+    }
+
+    public void openMenu(String menuKeyword){
+        UIObject menu = menus.get(menuKeyword);
+        menu.click();
     }
 }
