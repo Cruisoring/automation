@@ -2,6 +2,7 @@ package io.github.Cruisoring.wrappers;
 
 import io.github.Cruisoring.helpers.Executor;
 import io.github.Cruisoring.helpers.Logger;
+import io.github.Cruisoring.helpers.MapHelper;
 import io.github.Cruisoring.helpers.StringExtensions;
 import io.github.Cruisoring.interfaces.Creatable;
 import io.github.Cruisoring.interfaces.WorkingContext;
@@ -15,6 +16,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -105,7 +107,7 @@ public class  UICollection<T extends UIObject> extends UIObject {
     }
 
     public UICollection(WorkingContext context, By by, By childrenBy){
-        this(context, by, null,
+        this(context, by, 0,
                 getChildFactory(UIObject.UIObjectClass, childrenBy));
     }
 
@@ -203,17 +205,12 @@ public class  UICollection<T extends UIObject> extends UIObject {
         return null;
     }
 
-//    public T getAny(Predicate<T>... predicates) {
-//        List<T> all = getChildren();
-//        for(Predicate<T> predicate : predicates) {
-//            for (T each : all) {
-//                if(predicate.test(each))
-//                    return each;
-//            }
-//        }
-//
-//        return null;
-//    }
+    public T get(Pattern childPattern, String text){
+        List<String> childrenTexts = StringExtensions.getTexts(this.getOuterHTML(), childPattern, false);
+        String key = MapHelper.bestMatchedKey(childrenTexts, text);
+        int index = childrenTexts.indexOf(key);
+        return get(index);
+    }
 
     public <V> T get(Function<T, V> valueExtractor, Predicate<V> valuePredicate){
         final List<T> all = getChildren();

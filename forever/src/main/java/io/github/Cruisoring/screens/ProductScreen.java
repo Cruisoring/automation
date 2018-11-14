@@ -30,11 +30,9 @@ public class ProductScreen extends BaseScreen {
         return productTitle.getTextContent();
     }
 
-    public float getPrice(){
+    public String getPrice(){
         String priceText = itemPrice.getTextContent();
-        priceText = priceText.substring(priceText.indexOf("$")+1);
-        float price = StringExtensions.asFloat(priceText, -1f);
-        return price;
+        return priceText;
     }
 
     public String getDescription(){

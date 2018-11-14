@@ -6,6 +6,8 @@ import io.github.Cruisoring.helpers.Worker;
 import io.github.Cruisoring.wrappers.UICollection;
 import org.openqa.selenium.By;
 
+import java.util.List;
+
 public class ListScreen extends BaseScreen {
     protected final ProductsNavigator pages;
     protected final UICollection<PIContainer> products;
@@ -40,6 +42,10 @@ public class ListScreen extends BaseScreen {
     public boolean gotoPage(int pageNo) {
         waitPageReady();
         return pages.gotoPage(pageNo);
+    }
+
+    public List<PIContainer> getProducts(){
+        return products.getChildren();
     }
 
     public PIContainer getProduct(int index){

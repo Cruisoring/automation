@@ -13,6 +13,9 @@
         <module>safari</module>
         <module>google</module>
         <module>forever</module>
+        <module>enfsolar</module>
+        <module>enfsolar</module>
+        <module>proxies</module>
     </modules>
 
     <name>automation aggregator</name>

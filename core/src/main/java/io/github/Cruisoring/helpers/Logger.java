@@ -117,7 +117,7 @@ public class Logger {
         }
     };
 
-    static final Function<LogLevel, Integer> defaultStackCount = (l) -> {
+    static final Function<LogLevel, Integer> getDefaultStackCount = (l) -> {
         switch (l.toString()) {
             case "verbose":
                 return -5;
@@ -264,7 +264,7 @@ public class Logger {
     public static Logger W(String format, Object... args){
         if(OnlyDefaultLogger != null ){
             OnlyDefaultLogger.log(LogLevel.warning, format, args);
-            String stackTrace = getStackTrace(defaultStackCount.apply(LogLevel.warning));
+            String stackTrace = getStackTrace(getDefaultStackCount.apply(LogLevel.warning));
             OnlyDefaultLogger.log(LogLevel.verbose, stackTrace);
         }
         return OnlyDefaultLogger;
@@ -304,7 +304,7 @@ public class Logger {
 //        lastLogLevel = LogLevel.verbose;
     }
     public Logger(Consumer<String> output, BiFunction<LogLevel, String, String> formatter, LogLevel first, LogLevel... rest) {
-        this(output, formatter, defaultStackCount, first, rest);
+        this(output, formatter, getDefaultStackCount, first, rest);
     }
 
     public Logger(Consumer<String> output, LogLevel first, LogLevel... rest)

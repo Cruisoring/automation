@@ -5,7 +5,7 @@ import io.github.Cruisoring.helpers.*;
 import io.github.Cruisoring.screens.HomeScreen;
 import io.github.Cruisoring.screens.ListScreen;
 import io.github.Cruisoring.screens.ProductScreen;
-import io.github.Cruisoring.wrappers.UIImage;
+import org.apache.commons.lang3.StringUtils;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -18,18 +18,24 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Properties;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @Test
 public class saveProductSummary {
     public static final String defaultPropertyFilename = "default.properties";
     public static final String startUrl;
     public static final String saveLocation;
-    protected static Path booksDirectory = Paths.get("C:/test/books/");
+    protected static Path booksDirectory = Paths.get("C:/temp/");
+
+    static final Worker master;
+//    static final Map<Worker, String> slaves = new HashMap<>();
 
 
     static {
         Properties properties = ResourceHelper.getProperties(defaultPropertyFilename);
+        master = Worker.getAvailable();
 
         startUrl = properties.getProperty("startUrl");
         saveLocation = properties.getProperty("saveLocation");
@@ -43,36 +49,34 @@ public class saveProductSummary {
         }
     }
 
-    static Worker worker;
-
     HomeScreen homeScreen;
     ListScreen listScreen;
     ProductScreen productScreen;
 
-    @BeforeClass
-    public static void beforeClass(){
-        worker = Worker.getAvailable();
-    }
-
     @BeforeMethod
     public void beforeMethod(){
-        worker.invalidate();
-        homeScreen = worker.getScreen(HomeScreen.class);
-        listScreen = worker.getScreen(ListScreen.class);
-        productScreen = worker.getScreen(ProductScreen.class);
+        master.invalidate();
+        homeScreen = master.getScreen(HomeScreen.class);
+        listScreen = master.getScreen(ListScreen.class);
+        productScreen = master.getScreen(ProductScreen.class);
     }
 
     @AfterClass
     public static void afterClass() throws Exception {
-        if(worker != null){
-            worker.close();
-            worker = null;
+        if(master != null){
+            master.close();
         }
+//        for (Worker slave : slaves.keySet()) {
+//            if(slave != null){
+//                slave.close();
+//            }
+//        }
+//        slaves.clear();
     }
 
     @Test
     public void openRandomProducts() {
-        worker.gotoUrl(startUrl);
+        master.gotoUrl(startUrl);
         homeScreen.openMenu("Women", "All");
         int totalProducts = listScreen.getProductCount();
         int totalPages = listScreen.getPageCount();
@@ -88,51 +92,89 @@ public class saveProductSummary {
     }
 
     @Test
-    public void openSecondImage(){
-        worker.gotoUrl(startUrl);
+    public void saveOneProduct(){
+        master.gotoUrl(startUrl);
         homeScreen.openMenu("Women", "SWIM");
 
-        listScreen.gotoPage(2);
+//        listScreen.gotoPage(2);
 //        Assert.assertEquals(2, listScreen.getCurrentPage());
 
         int displayedCount = listScreen.getDisplayedCount();
         Logger.I("There are %d products displayed.", displayedCount);
-        listScreen.getProduct(displayedCount-2).click();
+        listScreen.getProduct(2).click(-1);
 
         URL picUrl = productScreen.getPictureUrl();
         String productName = productScreen.getProductName();
         String productDescription = productScreen.getDescription();
-        float price = productScreen.getPrice();
-        URL thumbnailUrl = productScreen.getImage(2).getURL();
+        String address = productScreen.getWorker().driver.getCurrentUrl();
+        String price = productScreen.getPrice();
+        URL imageUrl = productScreen.getImage(0).getURL();
 
-        Logger.I("Name: %s, Price: $%f\nDescription: %s\nPic: %s\nThumbnail: %s",
-                productName, price, productDescription, picUrl, thumbnailUrl);
+        File excelTemplate = ResourceHelper.getResourceFile("Products.xlsx");
+        try (
+                ExcelBookHelper templateBook = new ExcelBookHelper(excelTemplate);) {
+
+            Path copyPath = Paths.get(booksDirectory.toString(), excelTemplate.getName());
+            ExcelBookHelper copyBook = templateBook.getResultBookCopy(copyPath.toString());
+
+            ExcelSheetHelper sheet = copyBook.getSheetHelper("Products");
+            sheet.sheetLazy.getValue().setDefaultRowHeightInPoints(100);
+
+            sheet.insertNewRow(productName, productDescription, address, price, imageUrl);
+            copyBook.save();
+        }catch (Exception e){}
     }
 
     @Test
-    public void saveOneProduct(){
-        worker.gotoUrl(startUrl);
-        homeScreen.openMenu("Women");
+    public void getURLs(){
+        master.gotoUrl(startUrl);
+        homeScreen.openMenu("women", "swim");
 
-        PIContainer product = listScreen.getProduct(10);
-        product.click(-1);
+        int displayedCount = listScreen.getDisplayedCount();
+        Logger.I("There are %d products displayed.", displayedCount);
 
-        URL picUrl = productScreen.getPictureUrl();
-        String productName = productScreen.getProductName();
-        String productDescription = productScreen.getDescription();
-        float price = productScreen.getPrice();
-        UIImage defaultImage = productScreen.getImage(0);
-        URL thumbnailUrl = defaultImage.getURL();
+        List<PIContainer> products = listScreen.getProducts();
+        List<String> productURLs = products.stream().parallel()
+                .map(p -> p.getLink())
+                .collect(Collectors.toList());
 
-        Logger.I("Name: %s, Price: $%f\nDescription: %s\nPic: %s\nThumbnail: %s",
-                productName, price, productDescription, picUrl, thumbnailUrl);
+        int size = productURLs.size();
+        Logger.I("%d Product URLs.", size);
 
         File excelTemplate = ResourceHelper.getResourceFile("Products.xlsx");
-        ExcelBookHelper templateBook = new ExcelBookHelper(excelTemplate);
-        Path copyPath = Paths.get(booksDirectory.toString(), excelTemplate.getName());
-        ExcelBookHelper copyBook = templateBook.getResultBookCopy(copyPath.toString());
+        try (
+                ExcelBookHelper templateBook = new ExcelBookHelper(excelTemplate);) {
 
-        ExcelSheetHelper sheetHelper = copyBook.getSheetHelper("Products");
+            Path copyPath = Paths.get(booksDirectory.toString(), excelTemplate.getName());
+            ExcelBookHelper copyBook = templateBook.getResultBookCopy(copyPath.toString());
 
+            ExcelSheetHelper sheet = copyBook.getSheetHelper("Products");
+            sheet.sheetLazy.getValue().setDefaultRowHeightInPoints(100);
+
+            for (int i = 0; i < size; i++) {
+                Object[] details = extractProductDetails(master, productURLs.get(i));
+                sheet.insertNewRow(details);
+            }
+            copyBook.save();
+        }catch (Exception e){
+
+        }
+
+    }
+
+    private Object[] extractProductDetails(Worker worker, String url){
+        Objects.requireNonNull(worker);
+        Objects.requireNonNull(url);
+
+        worker.gotoUrl(url);
+        ProductScreen prod = worker.getScreen(ProductScreen.class);
+
+        String productName = prod.getProductName();
+        String productDescription = prod.getDescription();
+        String price = prod.getPrice();
+        URL firstImage = prod.getImage(0).getURL();
+        Object[] details = new Object[] { productName, productDescription, url, price, firstImage};
+        Logger.D(StringUtils.join(details, ", "));
+        return details;
     }
 }

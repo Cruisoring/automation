@@ -3,11 +3,13 @@ package io.github.Cruisoring.helpers;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import java.net.URL;
 import java.util.*;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class StringExtensions {
@@ -18,8 +20,15 @@ public class StringExtensions {
     public static final BiPredicate<String, String> contains = (s, k) -> StringUtils.contains(s, k);
     public static final BiPredicate<String, String> containsIgnoreCase = (s, k) -> StringUtils.containsIgnoreCase(s, k);
 
-    public static final Pattern simpleTableRowPattern = Pattern.compile("<tbody></tbody>");
-    public static final Pattern linkPattern = Pattern.compile("<a[^>]*>[\\s\\S]*?</a>");
+    public static final String leafTablePatternString = "<(table)\\b[^>]*>(?:(?>[^<]+)|<(?!t\\1\\b[^>]*>))*?</\\1>";
+    public static final Pattern simpleTablePattern = Pattern.compile(leafTablePatternString, Pattern.MULTILINE);
+    public static final Pattern tableHeadPattern = Pattern.compile(leafTablePatternString.replace("table", "thead"), Pattern.MULTILINE);
+    public static final Pattern tableHeadCellPattern = Pattern.compile(leafTablePatternString.replace("table", "th"), Pattern.MULTILINE);
+    public static final Pattern tableBodyPattern = Pattern.compile(leafTablePatternString.replace("table", "tbody"), Pattern.MULTILINE);
+    public static final Pattern tableRowPattern = Pattern.compile(leafTablePatternString.replace("table", "tr"), Pattern.MULTILINE);
+    public static final Pattern tableCellPattern = Pattern.compile(leafTablePatternString.replace("table", "td"), Pattern.MULTILINE);
+    public static final Pattern anyTableCellPattern = Pattern.compile(leafTablePatternString.replace("table", "[td|th]"), Pattern.MULTILINE);
+    public static final Pattern linkPattern = Pattern.compile(leafTablePatternString.replace("table", "a"), Pattern.MULTILINE);
     public static final Pattern svgPattern = Pattern.compile("<svg[^>]*>[\\s\\S]*?</svg>");
     public static final Pattern imagePattern = Pattern.compile("<img[^>]*?>");
 
@@ -28,6 +37,33 @@ public class StringExtensions {
     public static final String attributePatternTemplate = "%s%s([^%c]*?)%s";
 
     public static final Map<String, Pattern> attributeRetrievePatterns = new HashMap<>();
+
+    public static List<String> getUrls(URL baseUrl, String outerHtml){
+        Objects.requireNonNull(baseUrl);
+        Objects.requireNonNull(outerHtml);
+
+        List<String> hrefs = StringExtensions.getSegments(outerHtml, StringExtensions.linkPattern)
+                .stream()
+                .map(e -> StringExtensions.valueOfAttribute(e, "href"))
+                .distinct()
+                .filter(href -> href != null)
+                .collect(Collectors.toList());
+
+        List<String> urls = hrefs.stream()
+                .map(href -> getUrl(baseUrl, href)).collect(Collectors.toList());
+
+        return urls;
+    }
+
+    private static String getUrl(URL baseUrl, String href){
+        try {
+            URL url = new URL(baseUrl, href);
+            return url.toString();
+        }catch (Exception ex){
+            Logger.E(ex);
+            return null;
+        }
+    }
 
     public static Pattern getAttributePattern(String leadingKey, String enclosingChars){
         String mapKey = leadingKey + enclosingChars;
@@ -157,6 +193,18 @@ public class StringExtensions {
         return list;
     }
 
+    public static List<String> getInnerText(String template, String tagname, boolean trim){
+        Pattern pattern = Pattern.compile("<td[^>]*>[\\s\\S]*?</td>".replaceAll("td", tagname));
+        List<String> segments = getSegments(template, pattern);
+        List<String> texts = new ArrayList<>();
+        for (int i = 0; i < segments.size(); i++) {
+            String text = StringEscapeUtils.unescapeHtml4(segments.get(i));
+            text = text.replaceAll("<[^>]*>", "");
+            texts.add(trim ? text.trim() : text);
+        }
+        return texts;
+    }
+
     public static String extractHtmlText(String template) {
         if (template == null) return null;
 
@@ -168,6 +216,15 @@ public class StringExtensions {
         return result;
     }
 
+    public static String getFirstSegment(String template, Pattern pattern){
+        Matcher matcher = pattern.matcher(template);
+        if(matcher.find()){
+            return matcher.group();
+        } else {
+            return null;
+        }
+    }
+
     public static List<String> getSegments(String template, Pattern pattern) {
         List<String> allMatches = new ArrayList<>();
         Matcher m = pattern.matcher(template);
@@ -176,6 +233,19 @@ public class StringExtensions {
         }
         return allMatches;
     }
+
+    public static List<String> getTexts(String template, Pattern pattern, boolean trim) {
+        List<String> allMatches = new ArrayList<>();
+        Matcher m = pattern.matcher(template);
+        while (m.find()) {
+            String element = m.group();
+            String text = extractHtmlText(element);
+            allMatches.add(trim ? text.trim() : text);
+        }
+        return allMatches;
+    }
+
+
 
     private static final Boolean matchAny(BiPredicate<String, String> matcher, String context, String[] keys) {
         if (context == null) return false;

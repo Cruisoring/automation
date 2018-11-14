@@ -51,7 +51,7 @@ public class Worker implements AutoCloseable, WorkingContext {
     private static final List<WebDriver> drivers = new ArrayList<>();
     private static int driverCount = 0;
 
-//    private final static Proxy proxy;
+    private final static Proxy proxy;
 
     private static List<String> proxies = new ArrayList<String>(Arrays.asList(
             "200.89.98.38:42619", "159.65.9.66:3128", "103.78.213.147:80", "159.89.192.39:3128",
@@ -87,7 +87,7 @@ public class Worker implements AutoCloseable, WorkingContext {
             System.setProperty(propName, properties.getProperty(propName));
         }
 
-//        proxy = getNextProxy();
+        proxy = getNextProxy();
     }
 
     public static Map<String, String> mappedURLs = new HashMap<>();
@@ -247,6 +247,14 @@ public class Worker implements AutoCloseable, WorkingContext {
     public String gotoUrl(String url) {
         driver.get(url);
         waitPageReady(60*1000);
+        String currentUrl = driver.getCurrentUrl();
+        Logger.I("get to: " + currentUrl);
+        return currentUrl;
+    }
+
+    public String gotoUrl(String url, int waitMills) {
+        driver.get(url);
+        waitPageReady(waitMills);
         String currentUrl = driver.getCurrentUrl();
         Logger.I("get to: " + currentUrl);
         return currentUrl;
@@ -454,14 +462,21 @@ public class Worker implements AutoCloseable, WorkingContext {
 //            "return elem != null && !!( elem.offsetWidth || elem.offsetHeight || elem.getClientRects().length );";
 
     public Boolean isVisible(WebElement e) {
+        JavascriptExecutor executor = driver;
         try {
             if (e == null) return false;
-            JavascriptExecutor executor = driver;
+            if(e.isDisplayed())
+                return true;
             String result = executor.executeScript(isVisibleScipt, e).toString();
             return Boolean.parseBoolean(result);
         } catch (Exception ex) {
-            Logger.V("%s with %s", ex.getClass().getSimpleName(), e.getTagName());
-            return false;
+            try {
+                String result = executor.executeScript(isVisibleScipt, e).toString();
+                return Boolean.parseBoolean(result);
+            }catch (Exception e2) {
+                Logger.V("%s with %s", ex.getClass().getSimpleName(), e.getTagName());
+                return false;
+            }
         }
     }
 

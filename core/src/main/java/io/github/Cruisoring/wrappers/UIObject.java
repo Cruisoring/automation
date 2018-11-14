@@ -186,7 +186,8 @@ public class UIObject implements IUIObject {
 
     public Boolean isVisible() {
         try {
-            return worker.isVisible(element) || worker.isVisible(getFreshElement());
+            boolean isVisible = worker.isVisible(element) || worker.isVisible(getFreshElement());
+            return isVisible;
         } catch (Exception e) {
             WebElement elem = getFreshElement();
             return worker.isVisible(elem);

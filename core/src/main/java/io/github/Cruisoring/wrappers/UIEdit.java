@@ -12,16 +12,20 @@ public class UIEdit extends UIObject implements IUIEdit {
     public static final By defaultEditLocator = By.cssSelector("input");
 
     public static class Collection extends UICollection<UIEdit> {
-        public Collection(WorkingContext context, By by, Integer index, By childrenBy){
-            super(context, by, index, UIEditClass, childrenBy);
+        public Collection(WorkingContext context, By containerBy, Integer index, By childrenBy){
+            super(context, containerBy, index, UIEditClass, childrenBy);
         }
 
-        public Collection(WorkingContext context, By by, By childrenBy){
-            this(context, by, 0, childrenBy);
+        public Collection(WorkingContext context, By containerBy, By childrenBy){
+            this(context, containerBy, 0, childrenBy);
         }
 
         public Collection(UIObject context, By childrenBy) {
-            super(context.parent, context.locator, null, UIEditClass, childrenBy);
+            this(context.parent, context.locator, null, childrenBy);
+        }
+
+        public Collection(UIObject context) {
+            this(context.parent, context.locator, null, defaultEditLocator);
         }
     }
 
