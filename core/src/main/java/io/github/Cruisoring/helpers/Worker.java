@@ -117,6 +117,31 @@ public class Worker implements AutoCloseable, WorkingContext {
         return new Worker(driver);
     }
 
+//    public static Worker getChrome(boolean withProxy, boolean inHeadless){
+//        ChromeOptions options = new ChromeOptions();
+//        //options.addArguments("--start-maximized");
+//        options.addArguments("--disable-web-security");
+//        if(inHeadless) {
+//            options.setHeadless(true);
+//        }
+//
+//        Map<String, Object> prefs = new HashMap<String, Object>();
+//        prefs.put("credentials_enable_service", false);
+//        prefs.put("profile.password_manager_enabled", false);
+//
+//        if(withProxy) {
+//            Proxy proxy = Randomizer.getProxy();
+//
+//        }
+//        options.setExperimentalOption("prefs", prefs);
+//            options.setProxy(getNextProxy());
+//        if(proxy != null)
+//            options.setProxy(proxy);
+//        else
+//            options.addArguments("--no-proxy-server");
+//
+//    }
+
     private static Worker getChromePlayer(ChromeOptions options) {
         if (options == null) {
             options = new ChromeOptions();

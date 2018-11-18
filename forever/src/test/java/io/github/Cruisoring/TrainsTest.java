@@ -109,9 +109,9 @@ public class TrainsTest {
 
             for (int i = 0; i < total; i++) {
                 Object[] details = getDetail(master, links.get(i));
-                listSheet.insertNewRow(details);
+                listSheet.appendRow(details);
                 List<Object[]> times = detailScreen.getTimetable();
-                times.forEach(row -> timetable.insertNewRow(row));
+                times.forEach(row -> timetable.appendRow(row));
             }
         }catch (Exception e){
 
@@ -201,10 +201,10 @@ public class TrainsTest {
                 String html = HttpClientHelper.readStringFromURL(links.get(i), "GB2312");
                 List<String> tableContents = StringExtensions.getSegments(html, UITable.simpleTablePattern);
                 List<String> details = StringExtensions.getTexts(tableContents.get(0), detailsPattern, true);
-                listSheet.insertNewRow(details.toArray());
+                listSheet.appendRow(details.toArray());
 
                 List<Object[]> times = DetailScreen.getTimetable(details.get(0), tableContents.get(1));
-                times.forEach(row -> timetable.insertNewRow(row));
+                times.forEach(row -> timetable.appendRow(row));
 
                 Logger.D("%d: %s", i+1, StringUtils.join(details, ", "));
             }

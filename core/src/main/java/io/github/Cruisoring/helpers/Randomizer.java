@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.Proxy;
 import java.nio.file.Files;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -133,7 +134,7 @@ public class Randomizer {
 
     static File proxyFile = new File("c:/working/proxies.txt");
 
-    public static Proxy[] proxies = null;
+    public static List<Proxy> proxies = null;
 
     static {
         if(proxyFile.exists()){
@@ -154,7 +155,7 @@ public class Randomizer {
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
-                proxies = list.toArray(new Proxy[0]);
+                proxies = list;
             }
 
         }
@@ -175,7 +176,9 @@ public class Randomizer {
     }
 
     public static Proxy getProxy(){
-        return getRandom(proxies);
+        Proxy proxy = getRandom(proxies.toArray(new Proxy[0]));
+        Logger.D(proxy.toString());
+        return proxy;
     }
 
     public static Float round(Float number, int scale) {
@@ -200,6 +203,11 @@ public class Randomizer {
         } else {
             return familyName + ", " + getRandom(boyNames);
         }
+    }
+
+    public static LocalDate getRandomDate(LocalDate firstDate, int bound){
+        int delta = random.nextInt(bound);
+        return firstDate.plusDays(delta);
     }
 
     public static Integer getRandomAge(){

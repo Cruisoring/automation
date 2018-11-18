@@ -7,7 +7,7 @@ import io.github.Cruisoring.wrappers.UIObject;
 import org.openqa.selenium.By;
 
 public class Country extends UIObject {
-    public static final By countryBy = By.cssSelector("div.clearfix");
+    public static final By countryBy = By.cssSelector("div.mk-section-body.clearfix>ul>li");
 
     public final UILink link;
     public final UIObject name;

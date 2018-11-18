@@ -120,7 +120,8 @@ public class saveProductSummary {
             ExcelSheetHelper sheet = copyBook.getSheetHelper("Products");
             sheet.sheetLazy.getValue().setDefaultRowHeightInPoints(100);
 
-            sheet.insertNewRow(productName, productDescription, address, price, imageUrl);
+            Object[] values = new Object[]{productName, productDescription, address, price, imageUrl};
+            sheet.appendRow(values);
             copyBook.save();
         }catch (Exception e){}
     }
@@ -153,7 +154,7 @@ public class saveProductSummary {
 
             for (int i = 0; i < size; i++) {
                 Object[] details = extractProductDetails(master, productURLs.get(i));
-                sheet.insertNewRow(details);
+                sheet.appendRow(details);
             }
             copyBook.save();
         }catch (Exception e){

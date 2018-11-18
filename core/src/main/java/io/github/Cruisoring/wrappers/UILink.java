@@ -5,6 +5,7 @@ import org.openqa.selenium.By;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.List;
 
 public class UILink extends UIObject {
     public static final Class UILinkClass = UILink.class;
@@ -26,6 +27,7 @@ public class UILink extends UIObject {
         public Collection(UIObject context) {
             this(context.parent, context.locator, null, defaultUILinkBy);
         }
+
     }
 
 

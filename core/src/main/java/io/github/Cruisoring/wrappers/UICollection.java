@@ -206,8 +206,10 @@ public class  UICollection<T extends UIObject> extends UIObject {
     }
 
     public T get(Pattern childPattern, String text){
-        List<String> childrenTexts = StringExtensions.getTexts(this.getOuterHTML(), childPattern, false);
+        List<String> childrenTexts = StringExtensions.getTexts(this.getOuterHTML(), childPattern, true);
         String key = MapHelper.bestMatchedKey(childrenTexts, text);
+        if(key == null)
+            return null;
         int index = childrenTexts.indexOf(key);
         return get(index);
     }

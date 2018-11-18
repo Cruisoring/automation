@@ -22,13 +22,14 @@ public class StringExtensions {
 
     public static final String leafTablePatternString = "<(table)\\b[^>]*>(?:(?>[^<]+)|<(?!t\\1\\b[^>]*>))*?</\\1>";
     public static final Pattern simpleTablePattern = Pattern.compile(leafTablePatternString, Pattern.MULTILINE);
+    public static final Pattern SimpleListItemPattern = Pattern.compile(leafTablePatternString.replace("table", "li"), Pattern.MULTILINE);
     public static final Pattern tableHeadPattern = Pattern.compile(leafTablePatternString.replace("table", "thead"), Pattern.MULTILINE);
     public static final Pattern tableHeadCellPattern = Pattern.compile(leafTablePatternString.replace("table", "th"), Pattern.MULTILINE);
     public static final Pattern tableBodyPattern = Pattern.compile(leafTablePatternString.replace("table", "tbody"), Pattern.MULTILINE);
     public static final Pattern tableRowPattern = Pattern.compile(leafTablePatternString.replace("table", "tr"), Pattern.MULTILINE);
     public static final Pattern tableCellPattern = Pattern.compile(leafTablePatternString.replace("table", "td"), Pattern.MULTILINE);
     public static final Pattern anyTableCellPattern = Pattern.compile(leafTablePatternString.replace("table", "[td|th]"), Pattern.MULTILINE);
-    public static final Pattern linkPattern = Pattern.compile(leafTablePatternString.replace("table", "a"), Pattern.MULTILINE);
+    public static final Pattern LinkPattern = Pattern.compile(leafTablePatternString.replace("table", "a"), Pattern.MULTILINE);
     public static final Pattern svgPattern = Pattern.compile("<svg[^>]*>[\\s\\S]*?</svg>");
     public static final Pattern imagePattern = Pattern.compile("<img[^>]*?>");
 
@@ -42,7 +43,7 @@ public class StringExtensions {
         Objects.requireNonNull(baseUrl);
         Objects.requireNonNull(outerHtml);
 
-        List<String> hrefs = StringExtensions.getSegments(outerHtml, StringExtensions.linkPattern)
+        List<String> hrefs = StringExtensions.getSegments(outerHtml, StringExtensions.LinkPattern)
                 .stream()
                 .map(e -> StringExtensions.valueOfAttribute(e, "href"))
                 .distinct()
@@ -55,7 +56,7 @@ public class StringExtensions {
         return urls;
     }
 
-    private static String getUrl(URL baseUrl, String href){
+    public static String getUrl(URL baseUrl, String href){
         try {
             URL url = new URL(baseUrl, href);
             return url.toString();
@@ -77,6 +78,7 @@ public class StringExtensions {
             String sub = String.format(attributePatternTemplate, leadingKey, splitter, ch, splitter);
             subs.add(sub);
         }
+        subs.add(String.format("%s([^%s]*)[%s ]", leadingKey, enclosingChars, enclosingChars));
         String patternString = String.join("|", subs);
         Pattern pattern = Pattern.compile(patternString);
         attributeRetrievePatterns.put(mapKey, pattern);
@@ -92,7 +94,7 @@ public class StringExtensions {
         Pattern pattern = getAttributePattern(attributeName);
         Matcher matcher = pattern.matcher(template);
         if (matcher.find()) {
-            for (int i = 1; i < matcher.groupCount(); i++) {
+            for (int i = matcher.groupCount(); i>0; i--) {
                 String result = matcher.group(i);
                 if(result != null) return result;
             }

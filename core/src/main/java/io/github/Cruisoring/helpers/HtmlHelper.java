@@ -275,7 +275,7 @@ public class HtmlHelper {
                         .collect(Collectors.toList()));
         String contentHtml = content.getOuterHTML();
         final String rootUrlPath = rootUrl.getPath();
-        List<String> hrefs = StringExtensions.getSegments(contentHtml, StringExtensions.linkPattern)
+        List<String> hrefs = StringExtensions.getSegments(contentHtml, StringExtensions.LinkPattern)
                 .stream()
                 .map(e -> StringExtensions.valueOfAttribute(e, "href"))
                 .distinct()

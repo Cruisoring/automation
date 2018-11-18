@@ -59,24 +59,31 @@ public class URLHelper {
         }
     }
 
+    /**
+     * The User Agent
+     */
+    private static final String AGENT = "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)";
+
     public static byte[] readAsBytes(URL url, Proxy proxy){
         if(url == null)
             return null;
 
         try(
                 ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                InputStream inputStream = proxy != null ?
-                        url.openConnection(getDefaultProxy(url)).getInputStream() : url.openStream();
                 ) {
+            URLConnection connection = proxy == null ? url.openConnection() : url.openConnection(proxy);
+            connection.setRequestProperty("User-Agent", AGENT);
+            try (InputStream inputStream = connection.getInputStream();) {
                 int readSize;
                 byte[] buffer = new byte[4096];
 
-                while( ( readSize = inputStream.read(buffer)) > 0){
+                while ((readSize = inputStream.read(buffer)) > 0) {
                     byteArrayOutputStream.write(buffer, 0, readSize);
                 }
                 return byteArrayOutputStream.toByteArray();
+            }
         }catch (Exception e) {
-            System.err.printf ("Failed while reading bytes from %s: %s", url.toExternalForm(), e.getMessage());
+            Logger.W("Failed while reading bytes from %s: %s", url.toExternalForm(), e.getMessage());
             return null;
         }
     }
@@ -105,8 +112,8 @@ public class URLHelper {
 //    }
 
     private final static Pattern charsetElementPattern =Pattern.compile("<meta\\s[^>]*charset=[^>]*>");
-    public static final String readHtml(URL url){
-        byte[] bytes = readAsBytes(url, null);
+    public static final String readHtml(URL url, Proxy proxy){
+        byte[] bytes = readAsBytes(url, proxy);
 
         if(bytes == null)
             return null;
@@ -118,7 +125,7 @@ public class URLHelper {
 
         String meta = matched.get(0);
         String charset = StringExtensions.valueOfAttribute(meta, "charset");
-        if("utf-8".equalsIgnoreCase(charset))
+        if(charset == null || "utf-8".equalsIgnoreCase(charset))
             return utf8;
 
         try {

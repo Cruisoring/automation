@@ -1,10 +1,16 @@
 package io.github.Cruisoring.screens;
 
+import io.github.Cruisoring.helpers.StringExtensions;
 import io.github.Cruisoring.helpers.Worker;
 import io.github.Cruisoring.wrappers.Screen;
 import io.github.Cruisoring.wrappers.UILink;
 import io.github.Cruisoring.wrappers.UIObject;
 import org.openqa.selenium.By;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
 
 public class InstallerScreen extends Screen {
     public final UIObject name;

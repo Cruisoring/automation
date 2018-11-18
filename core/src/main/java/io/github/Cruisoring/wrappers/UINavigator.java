@@ -1,5 +1,6 @@
 package io.github.Cruisoring.wrappers;
 
+import io.github.Cruisoring.helpers.MapHelper;
 import io.github.Cruisoring.helpers.StringExtensions;
 import io.github.Cruisoring.interfaces.WorkingContext;
 import io.github.cruisoring.Lazy;
@@ -17,10 +18,10 @@ public class UINavigator extends UIObject {
     public static final Pattern defaultPagePattern = Pattern.compile("<(li)\\b[^>]*>(?:(?>[^<]+)|<(?!t\\1\\b[^>]*>))*?</\\1>");
 
     public static final String[] Active = new String[]{"active", "current"};
-    public static final String[] First = new String[]{"first"};
-    public static final String[] Last = new String[]{"last"};
-    public static final String[] Previous = new String[]{"previous", "prev"};
-    public static final String[] Next = new String[]{"next"};
+    public static final String[] First = new String[]{"first", "<<"};
+    public static final String[] Last = new String[]{"last", ">>"};
+    public static final String[] Previous = new String[]{"previous", "prev", "back", "<", "Anterior"};
+    public static final String[] Next = new String[]{"next", "forward", ">", "Siguiente"};
 
     private static final Map<String, String[]> defaultPagePatterns = new HashMap<String, String[]>(){{
         put(StringUtils.join(Active, "|"), Active);
@@ -30,21 +31,32 @@ public class UINavigator extends UIObject {
         put(StringUtils.join(Next, "|"), Next);
     }};
 
+    public static final String[] ActiveClasses = new String[]{"active", "current"};
+    public static final String[] FirstClasses = new String[]{"first"};
+    public static final String[] LastClasses = new String[]{"last"};
+    public static final String[] PreviousClasses = new String[]{"previous", "prev", "back"};
+    public static final String[] NextClasses = new String[]{"next", "forward"};
+
+    private static final String[][] concernedClasses = new String[][]{ActiveClasses, FirstClasses, LastClasses, PreviousClasses, NextClasses};
+
     private static By getLocator(By pageBy, String key){
         String t = pageBy.toString();
         final String pageLabel = t.substring(t.indexOf(":")+2);
-        String matched = defaultPagePatterns.keySet().stream()
-                .filter(k -> StringUtils.containsIgnoreCase(k, key))
-                .findFirst().orElse(null);
-        if(matched == null){
-            return By.cssSelector(pageLabel + "." + key);
+        for (String[] classes : concernedClasses) {
+            for (String option : classes) {
+                if(StringUtils.equalsIgnoreCase(option, key)) {
+                    String allOptions = pageLabel + "." + StringUtils.join(classes, ", li.");
+                    return By.cssSelector(allOptions);
+                }
+            }
         }
-
-        String locator = Arrays.stream(Active)
-                .map(clz -> pageLabel + "." + clz)
-                .reduce((s1, s2) -> s1 + ", " + s2).orElse("");
-        return By.cssSelector(locator);
+        return null;
     }
+
+    private static final Map<String, By> defualtNavigatorBy = new HashMap<String, By>(){{
+        put(Next[0], getLocator(defaultPageBy, "next"));
+        put(Previous[0], getLocator(defaultPageBy, "prev"));
+    }};
 
     private final By pageBy;
     private final Pattern pagePattern;
@@ -58,11 +70,11 @@ public class UINavigator extends UIObject {
         this.pagePattern = defaultPagePattern;
         pages = new Lazy<UICollection>(() -> new UICollection(context, by, this.pageBy));
 
-        currentPage = new Lazy<UIObject>(()-> new UIObject(context, pagelocators.containsKey(Active[0])? pagelocators.get(Active[0]) : getLocator(pageBy, Active[0])));
-        firstPage = new Lazy<UIObject>(()-> new UIObject(context, pagelocators.containsKey(First[0])? pagelocators.get(First[0]) : getLocator(pageBy, First[0])));
-        lastPage = new Lazy<UIObject>(()-> new UIObject(context, pagelocators.containsKey(Last[0])? pagelocators.get(Last[0]) : getLocator(pageBy, Last[0])));
-        nextPage = new Lazy<UIObject>(()-> new UIObject(context, pagelocators.containsKey(Next[0])? pagelocators.get(Next[0]) : getLocator(pageBy, Next[0])));
-        previousPage = new Lazy<UIObject>(()-> new UIObject(context, pagelocators.containsKey(Previous[0])? pagelocators.get(Previous[0]) : getLocator(pageBy, Previous[0])));
+        currentPage = new Lazy<UIObject>(()-> new UIObject(context, MapHelper.tryGetWithMultipleKeys(pagelocators, Active)));
+        firstPage = new Lazy<UIObject>(()-> new UIObject(context, MapHelper.tryGetWithMultipleKeys(pagelocators, First)));
+        lastPage = new Lazy<UIObject>(()-> new UIObject(context, MapHelper.tryGetWithMultipleKeys(pagelocators, Last)));
+        nextPage = new Lazy<UIObject>(()-> new UIObject(context, MapHelper.tryGetWithMultipleKeys(pagelocators, Next)));
+        previousPage = new Lazy<UIObject>(()-> new UIObject(context, MapHelper.tryGetWithMultipleKeys(pagelocators, Previous)));
     }
 
     public UINavigator(WorkingContext context, By by, Integer index, By pageBy, Pattern pagePattern){
@@ -81,7 +93,7 @@ public class UINavigator extends UIObject {
     }
 
     public UINavigator(WorkingContext context, By by, Integer index) {
-        this(context, by, index, defaultPageBy, defaultPagePattern);
+        this(context, by, index, defaultPageBy, defualtNavigatorBy);
     }
 
     public UINavigator(WorkingContext context, By by) {
