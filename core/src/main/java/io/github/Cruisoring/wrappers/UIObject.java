@@ -4,9 +4,9 @@ import io.github.Cruisoring.enums.OnElement;
 import io.github.Cruisoring.helpers.Executor;
 import io.github.Cruisoring.helpers.Logger;
 import io.github.Cruisoring.helpers.StringExtensions;
-import io.github.Cruisoring.helpers.Worker;
 import io.github.Cruisoring.interfaces.IUIObject;
 import io.github.Cruisoring.interfaces.WorkingContext;
+import io.github.Cruisoring.workers.Worker;
 import org.apache.commons.lang3.StringUtils;
 import org.openqa.selenium.*;
 import org.openqa.selenium.interactions.Action;
@@ -427,14 +427,14 @@ public class UIObject implements IUIObject {
 
     /**
      * Scroll the element into the visible area of the browser window:
-     * @param alignTo Optional boolean value that indicates the type of the align:
+     * @param alignTop Optional boolean value that indicates the type of the align:
      *                true - the top of the element will be aligned to the top of the visible area of the scrollable ancestor
      *                false - the bottom of the element will be aligned to the bottom of the visible area of the scrollable ancestor.
 
      */
     @Override
-    public void scrollIntoViewByScript(Boolean alignTo) {
-        String script = "arguments[0].scrollIntoView(" + alignTo + ");";
+    public void scrollIntoViewByScript(Boolean alignTop) {
+        String script = "arguments[0].scrollIntoView(" + alignTop + ");";
         executeScript(script);
     }
 
@@ -449,9 +449,10 @@ public class UIObject implements IUIObject {
     @Override
     public void scrollIntoView() {
         try {
-            Locatable locatable = (Locatable) getElement();
-            locatable.getCoordinates().inViewPort();
-        } catch (Exception ex){}
+            scrollIntoViewByScript(false);
+        } catch (Exception ex){
+            scrollIntoViewByScript(true);
+        }
     }
 
     @Override
@@ -591,8 +592,8 @@ public class UIObject implements IUIObject {
     @Override
     public Boolean perform(String instruction){
         return perform(new Runnable[]{
-                () -> getElement().click(),
-                () -> this.clickByScript()
+                () -> this.clickByScript(),
+                () -> getElement().click()
         }, null, -1);
     }
 

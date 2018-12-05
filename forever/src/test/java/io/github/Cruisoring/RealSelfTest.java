@@ -53,5 +53,6 @@ public class RealSelfTest {
         master.gotoUrl(baseUrl);
         List<String> allPlaces = findScreen.findPlaces();
 
+
     }
 }

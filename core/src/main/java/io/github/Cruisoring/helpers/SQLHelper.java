@@ -1,5 +1,9 @@
 package io.github.Cruisoring.helpers;
 
+import io.github.cruisoring.Functions;
+import io.github.cruisoring.function.FunctionThrowable;
+import io.github.cruisoring.function.RunnableThrowable;
+import io.github.cruisoring.function.SupplierThrowable;
 import org.apache.commons.lang3.StringUtils;
 import org.openqa.selenium.InvalidArgumentException;
 
@@ -28,12 +32,12 @@ public class SQLHelper {
     public interface SetStatementValue {
         void set(PreparedStatement statement, Integer index, Object value) throws Exception;
 
-        default Executor.RunnableThrows asRunnable(PreparedStatement statement, Integer index, Object value){
+        default RunnableThrowable asRunnable(PreparedStatement statement, Integer index, Object value){
             return () -> set(statement, index, value);
         }
 
         default void execute(PreparedStatement statement, Integer index, Object value) {
-            Executor.run(asRunnable(statement, index, value));
+            Functions.Default.run(asRunnable(statement, index, value));
         }
     }
 
@@ -41,12 +45,12 @@ public class SQLHelper {
     public interface GetStatementValue {
         Object get(ResultSet resultSet, Integer index) throws Exception;
 
-        default Executor.SupplierThrows asRunnable(ResultSet resultSet, Integer index){
+        default SupplierThrowable asRunnable(ResultSet resultSet, Integer index){
             return () -> get(resultSet, index);
         }
 
         default Object execute(ResultSet resultSet, Integer index) {
-            return Executor.get(asRunnable(resultSet, index));
+            return Functions.Default.apply(asRunnable(resultSet, index));
         }
     }
 
@@ -195,8 +199,8 @@ public class SQLHelper {
         return resultSet.wasNull() ? null : value;
     }
 
-    public static final Map<String, Executor.FunctionThrows<ResultSet, Map<String, Object>>> rowToMapExtractors = new HashMap<>();
-    public static final Map<String, Executor.FunctionThrows<ResultSet, Object[]>> rowToArrayExtractors = new HashMap<>();
+    public static final Map<String, FunctionThrowable<ResultSet, Map<String, Object>>> rowToMapExtractors = new HashMap<>();
+    public static final Map<String, FunctionThrowable<ResultSet, Object[]>> rowToArrayExtractors = new HashMap<>();
 
     //Named SQLHelper buffer.
     public static final Map<String, SQLHelper> dbHelpers = new HashMap<>();
@@ -211,8 +215,7 @@ public class SQLHelper {
         if (helper == null) {
             String dbUrl = "";
             String dbUsername = "";
-            String dbPassword = "";
-            helper = new SQLHelper(environmentName, dbUrl, dbUsername, dbPassword);
+            helper = new SQLHelper(environmentName, dbUrl, dbUsername, "");
             dbHelpers.put(environmentName, helper);
         }
         return helper;
@@ -225,13 +228,13 @@ public class SQLHelper {
      * @param <T>   Type of the Java Class instances.
      * @return  A list of the solid Java Class instances.
      */
-    public static <T> List<T> fromResultSet(ResultSet resultSet, Executor.FunctionThrows<ResultSet, T> converter){
+    public static <T> List<T> fromResultSet(ResultSet resultSet, FunctionThrowable<ResultSet, T> converter){
         if(resultSet == null)
             return null;
         List<T> list = new ArrayList<T>();
         try {
             while(resultSet.next()){
-                T t = Executor.apply(converter, resultSet);
+                T t = (T) Functions.Default.apply(converter, resultSet);
                 list.add(t);
             }
         } catch (SQLException e){
@@ -377,26 +380,26 @@ public class SQLHelper {
         return result;
     }
 
-    public static Executor.FunctionThrows<ResultSet, Object[]> getRowValueArrayExtractor(ResultSet resultSet){
+    public static FunctionThrowable<ResultSet, Object[]> getRowValueArrayExtractor(ResultSet resultSet){
         try {
             ResultSetMetaData metaData = resultSet.getMetaData();
             int columnCount = metaData.getColumnCount();
             //Get SQL Data types of all columns
-            final List<Executor.FunctionThrows<ResultSet, Object>> rowFunctions = new ArrayList<>();
+            final List<FunctionThrowable<ResultSet, Object>> rowFunctions = new ArrayList<>();
             final List<String> columnNames = new ArrayList<>();
             for (int i=0; i<columnCount; i++){
                 final Integer index = i+1;
                 int sqlType = metaData.getColumnType(index);
                 columnNames.add(metaData.getColumnName(index));
                 if(SQL2JavaTypes.containsKey(sqlType)){
-                    Executor.FunctionThrows<ResultSet, Object> columnValueExtractor = rSet ->
+                    FunctionThrowable<ResultSet, Object> columnValueExtractor = rSet ->
                             SQL2JavaTypes.get(sqlType).get(rSet, index);
                     rowFunctions.add(columnValueExtractor);
                 } else {
                     throw new RuntimeException("Unsupported SQL type: " + i);
                 }
             }
-            Executor.FunctionThrows<ResultSet,Object[]> row2ArrayExtractor = (rSet) -> {
+            FunctionThrowable<ResultSet,Object[]> row2ArrayExtractor = (rSet) -> {
                 if(!rSet.next())
                     return null;    //Returns Null if there is no row returned
                 Object[] values = new Object[columnCount];
@@ -515,7 +518,7 @@ public class SQLHelper {
      * @param <T>       Type of the Java class to be converted to.
      * @return          A list of Java class instances converted from running the PreparedStatement.
      */
-    public <T> List<T> queryToObjects(Executor.FunctionThrows<ResultSet, T> converter, String querySQL, Object... args){
+    public <T> List<T> queryToObjects(FunctionThrowable<ResultSet, T> converter, String querySQL, Object... args){
         return query(rs -> fromResultSet(rs, converter), querySQL, args);
     }
 
@@ -589,7 +592,7 @@ public class SQLHelper {
             if (!rowToArrayExtractors.containsKey(script)) {
                 rowToArrayExtractors.put(script, getRowValueArrayExtractor(resultSet));
             }
-            Object[] values = Executor.apply(rowToArrayExtractors.get(script), resultSet);
+            Object[] values = (Object[]) Functions.Default.apply(rowToArrayExtractors.get(script), resultSet);
             if (values == null) {
                 Logger.I("Failed to find row with keys: %s", ReconcileHelper.getArrayDescription(actualArgs));
             } else if (resultSet.next()) {

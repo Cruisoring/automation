@@ -30,16 +30,8 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <drivers>../drivers</drivers>
 
-        <!-- Driver Path -->
-        <webdriver.chrome.driver>${drivers}/chromedriver.exe</webdriver.chrome.driver>
-        <webdriver.gecko.driver>${drivers}</webdriver.gecko.driver>
-        <webdriver.opera.driver>${drivers}</webdriver.opera.driver>
-        <phantomjs.binary.path>${drivers}/phantomjs.exe</phantomjs.binary.path>
-        <webdriver.edge.driver>${drivers}</webdriver.edge.driver>
-        <webdriver.ie.driver>${drivers}</webdriver.ie.driver>
-
         <!-- Dependency versions -->
-        <selenium.version>3.8.1</selenium.version>
+        <selenium.version>3.141.59</selenium.version>
         <testng.version>6.13.1</testng.version>
         <!--<cucumber.version>1.2.4</cucumber.version>-->
 

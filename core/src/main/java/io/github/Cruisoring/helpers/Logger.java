@@ -6,10 +6,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.IllegalFormatException;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -19,6 +16,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class Logger {
+    public final static String PercentageAscii = "&#37";
+
     public static final String LoggerName = Logger.class.getName();
     public static final String ExecutorName = Executor.class.getName();
     public static final String UIObjectName = UIObject.class.getName();
@@ -45,15 +44,6 @@ public class Logger {
     public static final String ANSI_UNDERLINE = "\u001B[4m";
     public static final String ANSI_STOP_UNDERLINE = "\u001B[24m";
     public static final String ANSI_BLINK = "\u001B[5m";
-
-    public static final String ANSI_BLACK_BACKGROUND = "\u001B[40m";
-    public static final String ANSI_RED_BACKGROUND = "\u001B[41m";
-    public static final String ANSI_GREEN_BACKGROUND = "\u001B[42m";
-    public static final String ANSI_YELLOW_BACKGROUND = "\u001B[43m";
-    public static final String ANSI_BLUE_BACKGROUND = "\u001B[44m";
-    public static final String ANSI_PURPLE_BACKGROUND = "\u001B[45m";
-    public static final String ANSI_CYAN_BACKGROUND = "\u001B[46m";
-    public static final String ANSI_WHITE_BACKGROUND = "\u001B[47m";
 
     // Reset
     public static final String RESET = "\033[0m";  // Text Reset
@@ -103,15 +93,15 @@ public class Logger {
                 LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_TIME));
         switch (l.toString()) {
             case "verbose":
-                return String.format("%s%s %s%s", BLACK_BACKGROUND, label, m, ANSI_RESET);
+                return String.format("%s%s %s%s", BLACK_BACKGROUND+WHITE, label, m, ANSI_RESET);
             case "debug":
-                return String.format("%s%s %s%s", CYAN, label, m, ANSI_RESET);
+                return String.format("%s%s %s%s", WHITE_BACKGROUND, label, m, ANSI_RESET);
             case "info":
-                return String.format("%s%s %s%s", YELLOW, label, m, ANSI_RESET);
+                return String.format("%s%s %s%s", CYAN_BACKGROUND, label, m, ANSI_RESET);
             case "warning":
-                return String.format("%s%s %s%s", PURPLE, label, m, ANSI_RESET);
+                return String.format("%s%s %s%s", YELLOW_BACKGROUND+BLUE_BOLD, label, m, ANSI_RESET);
             case "error":
-                return String.format("%s%s %s%s", RED, label, m, ANSI_RESET);
+                return String.format("%s%s %s%s", RED_BOLD, label, m, ANSI_RESET);
             default:
                 return String.format("%s %s%s", label, m, ANSI_RESET);
         }
@@ -277,15 +267,24 @@ public class Logger {
         return OnlyDefaultLogger;
     }
 
-    private static String formatedMessage(String format, Object... args) {
-        String message;
+    /**
+     * Try to call String.format() and refrain potential IllegalFormatException
+     * @param format    template to compose a string with given arguments
+     * @param args      arguments to be applied to the above template
+     * @return          string formatted with the given or exceptional template.
+     */
+    public static String tryFormatString(String format, Object... args) {
+        Objects.requireNonNull(format);
         try {
-            message = String.format(format, args);
-        } catch (IllegalFormatException ex) {
-            message = format + " ??? " + args.toString();
+            String formatted = String.format(format, args);
+            formatted = formatted.replaceAll(PercentageAscii, "%");
+            return formatted;
+        } catch (Exception e) {
+            String[] argStrings = Arrays.stream(args).map(arg -> arg.toString()).toArray(size -> new String[size]);
+            return String.format("MalFormated format: '%s'\nargs: '%s'", format, String.join(", ", argStrings));
         }
-        return message;
     }
+
 
     public final Consumer<String> output;
 //    public LogLevel lastLogLevel;
@@ -325,37 +324,37 @@ public class Logger {
     }
 
     public void log(LogLevel level, String format, Object... args) {
-        log(level, formatedMessage(format, args));
+        log(level, tryFormatString(format, args));
     }
 
     public void log(LogLevel level, Exception ex) {
         int stackCount = stackCountFun.apply(level);
         if(stackCount != 0) {
             String stackTrace = getStackTrace(stackCountFun.apply(level));
-            log(level, formatedMessage("%s:%s\r\n%s", ex.getClass().getSimpleName(), ex.getMessage(), stackTrace));
+            log(level, tryFormatString("%s:%s\r\n%s", ex.getClass().getSimpleName(), ex.getMessage(), stackTrace));
         } else {
-            log(level, formatedMessage("%s: %s", ex.getClass().getSimpleName(), ex.getMessage()));
+            log(level, tryFormatString("%s: %s", ex.getClass().getSimpleName(), ex.getMessage()));
         }
     }
 
     public void verbose(String format, Object... args){
-        log(LogLevel.verbose, formatedMessage(format, args));
+        log(LogLevel.verbose, tryFormatString(format, args));
     }
 
     public void debug(String format, Object... args){
-        log(LogLevel.debug, formatedMessage(format, args));
+        log(LogLevel.debug, tryFormatString(format, args));
     }
 
     public void info(String format, Object... args){
-        log(LogLevel.info, formatedMessage(format, args));
+        log(LogLevel.info, tryFormatString(format, args));
     }
 
     public void warning(String format, Object... args){
-        log(LogLevel.warning, formatedMessage(format, args));
+        log(LogLevel.warning, tryFormatString(format, args));
     }
 
     public void error(String format, Object... args){
-        log(LogLevel.error, formatedMessage(format, args));
+        log(LogLevel.error, tryFormatString(format, args));
     }
 
     public class Message{
@@ -372,7 +371,7 @@ public class Logger {
         public static final Function<String, String> defaultTimerFormatter = s ->
                 String.format("%s%s", ANSI_RESET, s);
         public static final Function<String, String> highlightTimerFormatter = s ->
-                String.format("%s%s%s%s", ANSI_RED, ANSI_YELLOW_BACKGROUND, s, ANSI_RESET);
+                String.format("%s%s%s%s", ANSI_RED, YELLOW_BACKGROUND, s, ANSI_RESET);
 
         public static String getClassMethod(String stackTrace){
             Matcher matcher = pattern.matcher(stackTrace);

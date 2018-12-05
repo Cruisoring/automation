@@ -1,5 +1,6 @@
 package io.github.Cruisoring.helpers;
 
+import io.github.Cruisoring.workers.Worker;
 import io.github.Cruisoring.wrappers.UIObject;
 import org.apache.commons.lang3.StringUtils;
 import org.openqa.selenium.By;

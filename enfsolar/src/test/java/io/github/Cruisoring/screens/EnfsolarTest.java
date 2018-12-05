@@ -1,17 +1,13 @@
 package io.github.Cruisoring.screens;
 
-import io.github.Cruisoring.components.Country;
 import io.github.Cruisoring.helpers.*;
-import io.github.Cruisoring.wrappers.UILink;
-import io.github.cruisoring.Functions;
+import io.github.Cruisoring.workers.Worker;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeMethod;
 
 import java.io.*;
 import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
 import java.net.Proxy;
 import java.net.URL;
 import java.nio.file.Files;
@@ -23,7 +19,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.*;
 public class EnfsolarTest {
 
     public static final String defaultPropertyFilename = "default.properties";
@@ -37,7 +32,7 @@ public class EnfsolarTest {
 
     static {
         Properties properties = ResourceHelper.getProperties(defaultPropertyFilename);
-        master = Worker.getAvailable();
+        master = Worker.getAny();
 
         startUrl = properties.getProperty("startUrl");
         saveLocation = properties.getProperty("saveLocation");
@@ -181,7 +176,7 @@ public class EnfsolarTest {
                     details = getDetail(master, installerUrls.get(next));
                 }while(details == null);
 
-                sheet.insertNewRow(details);
+                sheet.appendRow(details);
                 count ++;
                 if(count == 100)
                     break;

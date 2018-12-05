@@ -1,8 +1,14 @@
 package io.github.Cruisoring.enums;
 
 public enum DriverType {
-    any,
-    chrome,
+    //Browsers accesible and visible on Windows 10
+    Chrome,
     IE,
-    firefox,
+    Edge,
+    Firefox,
+    Opera,
+
+    //Headless browsers
+//    PhantomJS,
+
 }

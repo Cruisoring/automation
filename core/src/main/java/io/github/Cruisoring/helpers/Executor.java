@@ -1,13 +1,15 @@
 package io.github.Cruisoring.helpers;
 
+import io.github.cruisoring.function.ConsumerThrowable;
+import io.github.cruisoring.function.SupplierThrowable;
+import sun.security.pkcs11.wrapper.Functions;
+
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -28,76 +30,6 @@ public class Executor{
     public final static BooleanSupplier AlwaysFalse = () -> false;
     public final static BooleanSupplier AlwaysTrue = () -> true;
 
-    @FunctionalInterface
-    public interface RunnableThrows {
-        void run() throws Exception;
-
-        default RunnableThrows tryStartWith(RunnableThrows other){
-            return () -> {
-                Executor.run(other);
-                this.run();
-            };
-        }
-
-        default RunnableThrows tryFollowWith(RunnableThrows other){
-            return () -> {
-                try {
-                    this.run();
-                }finally {
-                    Executor.run(other);
-                }
-            };
-        }
-
-    }
-
-    @FunctionalInterface
-    public interface SupplierThrows<T> {
-        T get() throws Exception;
-    }
-
-    @FunctionalInterface
-    public interface ConsumerThrows<T> {
-        void accept(T t) throws Exception;
-    }
-
-    @FunctionalInterface
-    public interface FunctionThrows<T, R> {
-        R apply(T t) throws Exception;
-    }
-
-
-    public static void run(RunnableThrows runnable){
-        try {
-            runnable.run();
-        } catch (Exception ex){
-            throw new RuntimeException(ex);
-        }
-    }
-
-    public static <T> T get(SupplierThrows<T> supplier){
-        try {
-            return supplier.get();
-        }catch (Exception ex){
-            throw new RuntimeException(ex);
-        }
-    }
-
-    public static <T> void accept(ConsumerThrows<T> consumer, T t){
-        try {
-            consumer.accept(t);
-        } catch (Exception ex){
-            throw new RuntimeException(ex);
-        }
-    }
-
-    public static <T,R> R apply(FunctionThrows<T,R> function, T t){
-        try {
-            return function.apply(t);
-        }catch (Exception ex){
-            throw new RuntimeException(ex);
-        }
-    }
 
     /**
      * Running actions rotately until expected condition is met.
@@ -392,6 +324,74 @@ public class Executor{
             return results;
         } finally{
             EXEC.shutdown();
+        }
+    }
+
+    /**
+     * Run commands with one input to get one output in parallel.
+     * @param howTo     Method to perform action upon a task instance.
+     * @param tasks     All inputs of R type.
+     * @param timeoutMinutes    maximum time in minute to wait a process done
+     * @param <T>       Returned Type.
+     * @return          Returned values as a list.
+     * @throws Throwable
+     */
+    public static <T> List<Boolean> runParallel(ConsumerThrowable<T> howTo, List<T> tasks, long timeoutMinutes)
+            throws Exception{
+
+        Function<T, Boolean> function = (t) -> {
+            try {
+                howTo.accept(t);
+                return true;
+            }catch (Exception ex){
+                return false;
+            }
+        };
+
+        List<Callable<Boolean>> callables = new ArrayList<>();
+        tasks.stream().forEach(t -> {
+            Callable<Boolean> callable = () -> function.apply(t);
+            callables.add(callable);
+        });
+
+        ExecutorService EXEC = Executors.newCachedThreadPool();
+        try {
+            List<Boolean> results;
+            results = EXEC.invokeAll(callables)
+                    .stream()
+                    .map(f -> {
+                        try {
+                            return f.get(timeoutMinutes, TimeUnit.MINUTES);
+                        } catch (Exception e) {
+                            Logger.W(e);
+                            return null;
+//                            throw new IllegalStateException(e);
+                        }
+                    })
+                    .collect(Collectors.toList());
+            return results;
+        } finally{
+            EXEC.shutdown();
+        }
+    }
+
+    public static <T> List<T> runParallel(int nThreads, List<SupplierThrowable<T>> suppliers){
+        ExecutorService executor = Executors.newFixedThreadPool(nThreads);
+
+        List<CompletableFuture<T>> futures = suppliers.stream()
+                .map( supplier -> CompletableFuture.supplyAsync(supplier.orElse(null), executor))
+                .collect(Collectors.toList());
+
+        CompletableFuture<Void> all = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+        CompletableFuture<List<T>> result = all.thenApply(v -> {
+            return futures.stream()
+                    .map(pageContentFuture -> pageContentFuture.join())
+                    .collect(Collectors.toList());
+        });
+        try {
+            return result.get();
+        }catch (Exception ex){
+            return null;
         }
     }
 }

@@ -38,18 +38,6 @@ public class URLHelper {
         return proxy;
     }
 
-    public static Proxy getDefaultProxy(URL url){
-        Objects.requireNonNull(url);
-
-        try {
-            List<Proxy> proxies = ProxySelector.getDefault().select(url.toURI());
-            return proxies.isEmpty() ? null : proxies.get(0);
-        } catch (URISyntaxException e) {
-            Logger.W(e);
-            return null;
-        }
-    }
-
     public static String getLink(URL baseUrl, String href){
         try {
             return new URL(baseUrl, href).toString();
@@ -64,14 +52,20 @@ public class URLHelper {
      */
     private static final String AGENT = "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)";
 
-    public static byte[] readAsBytes(URL url, Proxy proxy){
+    public static byte[] readAsBytes2(URL url, Proxy proxy){
         if(url == null)
             return null;
 
         try(
                 ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
                 ) {
-            URLConnection connection = proxy == null ? url.openConnection() : url.openConnection(proxy);
+            if(proxy != null) {
+                String address = proxy.address().toString();
+                System.setProperty("http.proxySet", "true");
+                System.setProperty("http.proxyHost", address.substring(1, address.indexOf(":")));
+                System.setProperty("http.proxyPort", address.substring(address.indexOf(":")+1));
+            }
+            HttpURLConnection connection = (HttpURLConnection) (proxy == null ? url.openConnection() : url.openConnection(proxy));
             connection.setRequestProperty("User-Agent", AGENT);
             try (InputStream inputStream = connection.getInputStream();) {
                 int readSize;
@@ -85,6 +79,42 @@ public class URLHelper {
         }catch (Exception e) {
             Logger.W("Failed while reading bytes from %s: %s", url.toExternalForm(), e.getMessage());
             return null;
+        }
+    }
+
+    public static byte[] readAsBytes(URL url, Proxy proxy){
+        if(url == null)
+            return null;
+
+        try(
+                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                ) {
+            if(proxy != null) {
+                String address = proxy.address().toString();
+                System.setProperty("https.proxySet", "true");
+                System.setProperty("https.proxyHost", address.substring(1, address.indexOf(":")));
+                System.setProperty("https.proxyPort", address.substring(address.indexOf(":")+1));
+            }
+//            HttpURLConnection connection = (HttpURLConnection) (proxy == null ? url.openConnection() : url.openConnection(proxy));
+//            connection.setRequestProperty("User-Agent", AGENT);
+            try (InputStream inputStream = url.openStream();) {
+                int readSize;
+                byte[] buffer = new byte[4096];
+
+                while ((readSize = inputStream.read(buffer)) > 0) {
+                    byteArrayOutputStream.write(buffer, 0, readSize);
+                }
+                return byteArrayOutputStream.toByteArray();
+            }
+        }catch (Exception e) {
+            Logger.W("Failed while reading bytes from %s: %s", url.toExternalForm(), e.getMessage());
+            return null;
+        } finally {
+            if(proxy != null){
+                System.setProperty("https.proxySet", "false");
+//                System.setProperty("http.proxyHost", null);
+//                System.setProperty("http.proxyPort", null);
+            }
         }
     }
 

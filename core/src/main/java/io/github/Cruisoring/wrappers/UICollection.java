@@ -7,6 +7,7 @@ import io.github.Cruisoring.helpers.StringExtensions;
 import io.github.Cruisoring.interfaces.Creatable;
 import io.github.Cruisoring.interfaces.WorkingContext;
 import io.github.cruisoring.Lazy;
+import io.github.cruisoring.function.FunctionThrowable;
 import org.apache.commons.lang3.StringUtils;
 import org.openqa.selenium.By;
 
@@ -186,7 +187,7 @@ public class  UICollection<T extends UIObject> extends UIObject {
         return size == 0 ? null : children.get(size-1);
     }
 
-    public T get(Executor.FunctionThrows<T, String> valueExtractor, Predicate<String>... predicates) {
+    public T get(FunctionThrowable<T, String> valueExtractor, Predicate<String>... predicates) {
         List<T> all = getChildren();
         int size = all.size();
         //Lazy to handle potential exceptions by keep nulls

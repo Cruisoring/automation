@@ -40,13 +40,13 @@ public class FindScreen extends Screen {
             String html = category.getOuterHTML();
             List<String> segments = StringExtensions.getSegments(html, StringExtensions.SimpleListItemPattern);
             for (String segment : segments) {
-                String place = StringExtensions.extractHtmlText(segment);
+                String place = StringExtensions.extractHtmlText(segment).trim();
                 String href = StringExtensions.valueOfAttribute(segment, "href");
                 String url = StringExtensions.getUrl(baseUrl, href);
                 Logger.D("%s: %s", place, url);
                 links.add(url);
             }
         }
-        return findPlaces();
+        return links;
     }
 }

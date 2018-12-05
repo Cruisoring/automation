@@ -2,7 +2,7 @@ package io.github.Cruisoring;
 
 
 import io.github.Cruisoring.helpers.URLHelper;
-import io.github.Cruisoring.helpers.Worker;
+import io.github.Cruisoring.workers.Worker;
 import io.github.Cruisoring.wrappers.Screen;
 import io.github.Cruisoring.wrappers.UINavigator;
 import io.github.Cruisoring.wrappers.UITable;

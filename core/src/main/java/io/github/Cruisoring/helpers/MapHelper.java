@@ -152,4 +152,30 @@ public class MapHelper {
         }
         return map;
     }
+
+    /**
+     * Convert the map to Json format with keys sorted.
+     * @param map   Map to be converted.
+     * @return      String of Json format.
+     */
+    public static String asJson(Map<?,?> map){
+        String json = "{" + map.entrySet().stream()
+                .sorted(Comparator.comparing(entry -> entry.getKey().toString()))
+                .map(entry -> String.format("\"%s\": \"%s\"", entry.getKey(), entry.getValue()))
+                .collect(Collectors.joining(",")) + "}";
+        return json;
+    }
+
+    /**
+     * Convert the map to Json format with keys sorted.
+     * @param map   Map to be converted.
+     * @return      String of Json format.
+     */
+    public static String asFormattedJson(Map<?,?> map){
+        String json = "{\n" + map.entrySet().stream()
+                .sorted(Comparator.comparing(entry -> entry.getKey().toString()))
+                .map(entry -> String.format("\t\"%s\": \"%s\"", entry.getKey(), entry.getValue()))
+                .collect(Collectors.joining(",\n")) + "\n}";
+        return json;
+    }
 }
