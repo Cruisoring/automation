@@ -5,7 +5,7 @@ import java.util.Comparator;
 import java.util.function.Predicate;
 import java.util.stream.IntStream;
 
-public class ArrayHelper {
+public class ArrayUtils {
 
     public static <T> int indexOf(T[] array, Predicate<T> predicate){
         return indexOf(array, 0, predicate);

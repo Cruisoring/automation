@@ -1,5 +1,6 @@
 package io.github.Cruisoring.wrappers;
 
+import io.github.Cruisoring.enums.DriverType;
 import io.github.Cruisoring.enums.OnElement;
 import io.github.Cruisoring.helpers.Executor;
 import io.github.Cruisoring.helpers.Logger;
@@ -336,6 +337,10 @@ public class UIObject implements IUIObject {
         return result == null ? null : result.toString();
     }
 
+    public String getElementClass() {
+        return getAttribute("class");
+    }
+
     @Override
     public String getCssValueOf(String propertyName) {
         String result= getElement().getCssValue(propertyName);
@@ -359,8 +364,8 @@ public class UIObject implements IUIObject {
         executeScript(eventScript);
     }
 
-    protected static String DefaultHighlightScript = "var e =arguments[0]; e.style.color='red';e.style.backgroundColor='yellow';";
-    protected static String DefaultResetStyleScript = "var e=arguments[0]; e.style.color='';e.style.backgroundColor='';";
+    public static String DefaultHighlightScript = "var e =arguments[0]; e.style.color='red';e.style.backgroundColor='yellow';";
+    public static String DefaultResetStyleScript = "var e=arguments[0]; e.style.color='';e.style.backgroundColor='';";
     protected static int DefaultHighlightIntervalMills = 100;
     protected static int DefaultHighlightTimes = 1;
 
@@ -500,43 +505,43 @@ public class UIObject implements IUIObject {
         Boolean result = false;
         try (Logger.Timer timer = Logger.M()) {
 
-    //        Logger.V("Start waitPageReady");
-            worker.waitPageReady();
-    //        Logger.V("End of waitPageReady");
+            if(worker.driverType != DriverType.IE) {
+                worker.waitPageReady();
+            }
 
             if(!exists()) {
                 Logger.E("Failed to find %s, action aborted.", this);
                 return false;
             }
-    //        Logger.V("End of exists()");
+//            Logger.V("End of exists()");
 
             if (retry == -1) {
                 retry = actions.length-1;
             }
 
             try {
-    //            Logger.V("Check if element is enabled.");
+//                Logger.V("Check if element is enabled.");
                 if(!getElement().isEnabled() && Executor.testUntil(() -> getElement().isEnabled(), DefaultWaitEnabledMills)) {
-                    Logger.E("%s is still not enabled.", this);
+//                    Logger.E("%s is still not enabled.", this);
                     return false;
                 }
-    //            Logger.V("Now element is enabled.");
+//                Logger.V("Now element is enabled.");
 
                 if(BypassUnnessaryActions && evaluation != null && evaluation.getAsBoolean()) {
-                    Logger.V("Validation passed already, action on %s is bypassed.", this);
+//                    Logger.V("Validation passed already, action on %s is bypassed.", this);
                     return true;
                 }
 
-    //            Logger.V("Before checking if element is shown.");
+//                Logger.V("Before checking if element is shown.");
                 if(AssureShowControlBeforeActions) {
                     Executor.tryRun(new Runnable[]{
                             ()->scrollIntoView(),
                             ()->this.scrollIntoViewByScript()});
-    //                Logger.V("After element is shown.");
+//                    Logger.V("After element is shown.");
 
                     if(HightlightBeforeActions) {
                         highlight();
-    //                    Logger.V("After element is highlighted.");
+//                        Logger.V("After element is highlighted.");
                     }
                 }
 
@@ -547,9 +552,9 @@ public class UIObject implements IUIObject {
                     });
                 }
 
-    //            Logger.V("Before perform solid actions");
+//                Logger.V("Before perform solid actions");
                 Executor.tryRun(actions, actions.length-1);
-    //            Logger.V("Action on %s is performed successfully.", this);
+//                Logger.V("Action on %s is performed successfully.", this);
                 return true;
             } catch (UnhandledAlertException alertEx) {
                 try {
@@ -592,16 +597,14 @@ public class UIObject implements IUIObject {
     @Override
     public Boolean perform(String instruction){
         return perform(new Runnable[]{
-                () -> this.clickByScript(),
-                () -> getElement().click()
+                () -> getElement().click(),
+                () -> this.clickByScript()
         }, null, -1);
     }
 
     @Override
     public void click() {
-        if (perform(null)) {
-            Logger.V("%s is clicked.", this);
-        } else {
+        if (!perform(null)) {
             Logger.W("Failed to click on %s.", this);
             Logger.V("%s: %s", this, getOuterHTML());
         }
@@ -610,10 +613,16 @@ public class UIObject implements IUIObject {
     @Override
     public boolean click(int waitReadyMills){
         click();
+        Logger.V("clicked on %s", this);
         if(waitReadyMills < 0)
             waitReadyMills = DefaultWaitChangesMills;
-        sleep(1000);
-        return worker.waitPageReady(waitReadyMills);
+        if(worker.driverType == DriverType.IE){
+            sleep(waitReadyMills);
+            return true;
+        }else {
+            sleep(1000);
+            return worker.waitPageReady(waitReadyMills);
+        }
     }
 
     public void click(OnElement position) {

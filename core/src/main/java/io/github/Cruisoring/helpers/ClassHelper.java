@@ -19,10 +19,10 @@ public class ClassHelper {
 
     public static Class<?> getCallerClass(Predicate<StackTraceElement> predicate){
         StackTraceElement[] stElements = Thread.currentThread().getStackTrace();
-        int index = ArrayHelper.indexOf(stElements, s -> !callerOnlyPredicate.test(s));
-        index = ArrayHelper.indexOf(stElements, index, callerOnlyPredicate);
+        int index = ArrayUtils.indexOf(stElements, s -> !callerOnlyPredicate.test(s));
+        index = ArrayUtils.indexOf(stElements, index, callerOnlyPredicate);
         if(predicate != null)
-            index = ArrayHelper.indexOf(stElements, index, predicate);
+            index = ArrayUtils.indexOf(stElements, index, predicate);
 
         if(index == -1)
             return null;

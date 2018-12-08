@@ -2,15 +2,13 @@ package io.github.Cruisoring.workers;
 
 import io.github.Cruisoring.enums.DriverType;
 import io.github.Cruisoring.enums.ReadyState;
-import io.github.Cruisoring.helpers.Executor;
-import io.github.Cruisoring.helpers.Logger;
-import io.github.Cruisoring.helpers.Randomizer;
-import io.github.Cruisoring.helpers.ResourceHelper;
+import io.github.Cruisoring.helpers.*;
 import io.github.Cruisoring.interfaces.WorkingContext;
 import io.github.Cruisoring.wrappers.Screen;
 import io.github.Cruisoring.wrappers.UIObject;
 import io.github.cruisoring.Functions;
 import io.github.cruisoring.Lazy;
+import io.github.cruisoring.tuple.Tuple3;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.openqa.selenium.*;
@@ -92,7 +90,7 @@ public class Worker implements AutoCloseable, WorkingContext {
                 new Rectangle(new Point(2*width/3, 0), OneThirdHorizontalDimension)});
         DefaultBrowserRectangls.put(4, new Rectangle[]{new Rectangle(new Point(0, 0), QuarterMonitorDimension),
                 new Rectangle(new Point(width/2, 0), QuarterMonitorDimension),
-                new Rectangle(new Point(width/2, height/2), QuarterMonitorDimension),
+                new Rectangle(new Point(0, height/2), QuarterMonitorDimension),
                 new Rectangle(new Point(width/2, height/2), QuarterMonitorDimension)});
         DefaultBrowserRectangls.put(5, new Rectangle[]{new Rectangle(new Point(width/3, 0), OneThirdHorizontalDimension),
                 new Rectangle(new Point(0, 0), OneSixthMonitorDimension),
@@ -158,17 +156,31 @@ public class Worker implements AutoCloseable, WorkingContext {
         return Randomizer.getRandom(proxies.getValue());
     }
 
-    private static List<Worker> activeWorkers = new ArrayList<>();
+    private static Pipe<Worker> activeWorkers = new Pipe<Worker>(5);
+
+    public static List<Worker> createAll(int intervalSeconds, DriverType... types){
+        List<Worker> workers = new ArrayList<>();
+        for (DriverType type :
+                types) {
+            workers.add(create(type, intervalSeconds));
+        }
+        return workers;
+    }
 
     public static Worker create(DriverType type){
-        return create(type, null);
+        return create(type, 1);
     }
 
-    public static Worker create(DriverType type, Capabilities capabilities){
-        return create(type, capabilities, defaultWithProxy ? getNextProxy():null);
+    public static Worker create(DriverType type, int restInSeconds){
+        return create(type, restInSeconds, null);
     }
 
-    public static Worker create(DriverType type, Capabilities capabilities, Proxy proxy){
+
+    public static Worker create(DriverType type, int restInSeconds, Capabilities capabilities){
+        return create(type, restInSeconds, capabilities, defaultWithProxy ? getNextProxy():null);
+    }
+
+    public static Worker create(DriverType type, int restInSeconds, Capabilities capabilities, Proxy proxy){
         Worker worker = null;
         switch (type) {
             case Chrome:
@@ -190,8 +202,10 @@ public class Worker implements AutoCloseable, WorkingContext {
                 worker = null;
                 break;
         }
-        activeWorkers.add(worker);
+        activeWorkers.push(worker);
         arrangeAll();
+        if(restInSeconds > 0)
+            Executor.sleep(restInSeconds*1000);
         return worker;
     }
 
@@ -209,7 +223,8 @@ public class Worker implements AutoCloseable, WorkingContext {
 
     protected static void arrangeAll(){
         try {
-            List<Rectangle> rectangles = Executor.runParallel(Worker::arrangeByDefault, activeWorkers, 10 * 1000);
+            List<Rectangle> rectangles = Executor.runParallel(Worker::arrangeByDefault,
+                    activeWorkers.stream().collect(Collectors.toList()), 10 * 1000);
         }catch (Exception ex){
             Logger.W(ex);
         }
@@ -217,9 +232,19 @@ public class Worker implements AutoCloseable, WorkingContext {
 
     public static void closeAll(){
         try {
-            List<Boolean> classResults = Executor.runParallel((Worker worker) -> worker.close(), activeWorkers, 10*1000);
+            List<Boolean> classResults = Executor.runParallel((Worker worker) -> worker.close(),
+                    activeWorkers.stream().collect(Collectors.toList()), 10*1000);
         }catch (Exception ex){
             Logger.W(ex);
+        }
+    }
+
+    public static void close(Worker worker){
+        try {
+            activeWorkers.pop(worker);
+            arrangeAll();
+        }catch (Exception ex){
+            Logger.D(ex);
         }
     }
 
@@ -251,44 +276,6 @@ public class Worker implements AutoCloseable, WorkingContext {
         return create(intendedTypes[0]);
     }
 
-//    private static Worker getIEPlayer(DesiredCapabilities desiredCapabilities) {
-//        if (desiredCapabilities == null) {
-//            System.setProperty("webdriver.ie.driver.loglevel", "TRACE");
-//            System.setProperty("webdriver.ie.driver.logfile", "C:/Projects/logme.txt");
-//            DesiredCapabilities caps = DesiredCapabilities.internetExplorer();
-//            caps.setCapability(InternetExplorerDriver.INTRODUCE_FLAKINESS_BY_IGNORING_SECURITY_DOMAINS, true);
-//            caps.setCapability(CapabilityType.ACCEPT_SSL_CERTS, true);
-//            //caps.setCapability(InternetExplorerDriver.IE_ENSURE_CLEAN_SESSION, true);
-//            WebDriver driver = new InternetExplorerDriver(caps);
-//        }
-//        WebDriver driver = new InternetExplorerDriver(desiredCapabilities);
-//        return new Worker(driver);
-//    }
-
-    //    public static Worker getChrome(boolean withProxy, boolean inHeadless){
-//        ChromeOptions options = new ChromeOptions();
-//        //options.addArguments("--start-maximized");
-//        options.addArguments("--disable-web-security");
-//        if(inHeadless) {
-//            options.setHeadless(true);
-//        }
-//
-//        Map<String, Object> prefs = new HashMap<String, Object>();
-//        prefs.put("credentials_enable_service", false);
-//        prefs.put("profile.password_manager_enabled", false);
-//
-//        if(withProxy) {
-//            Proxy proxy = Randomizer.getProxy();
-//
-//        }
-//        options.setExperimentalOption("prefs", prefs);
-//            options.setProxy(getNextProxy());
-//        if(proxy != null)
-//            options.setProxy(proxy);
-//        else
-//            options.addArguments("--no-proxy-server");
-//
-//    }
 
     public static Worker getChrome(boolean withProxy){
         return getChrome(withProxy, false);
@@ -340,7 +327,7 @@ public class Worker implements AutoCloseable, WorkingContext {
 
     public RemoteWebDriver driver;
 
-    protected DriverType driverType;
+    public final DriverType driverType;
 
     protected Worker(DriverType driverType){
         Objects.requireNonNull(driverType);
@@ -416,7 +403,7 @@ public class Worker implements AutoCloseable, WorkingContext {
 
     public String gotoUrl(String url) {
         driver.get(url);
-        waitPageReady(60 * 1000);
+        waitPageReady(10 * 1000);
         String currentUrl = driver.getCurrentUrl();
         Logger.I("get to: " + currentUrl);
         return currentUrl;
@@ -504,26 +491,16 @@ public class Worker implements AutoCloseable, WorkingContext {
             + "else if(document && document.parentWindow) return document.parentWindow.document.readyState;"
             + "else return 'unknown';";
 
-    public ReadyState getReadyState() {
-        try {
-            String stateStr = driver.executeScript(getReadyStateScript).toString();
-            return ReadyState.fromString(stateStr);
-        } catch (UnhandledAlertException alert) {
-            return ReadyState.loaded;
-        } catch (Exception ex) {
-            Logger.V(ex);
-            return ReadyState.unknown;
-        }
+    public String getReadyState() {
+        return driver.executeScript(getReadyStateScript).toString();
     }
 
     protected Boolean waitForReadyState(long timeoutMillis, EnumSet<ReadyState> expectedStates) {
-        Boolean isReady = false;
-//        try (Logger.Timer timer = Logger.M()) {
-        final BooleanSupplier evaluator = () ->
-                expectedStates.contains(getReadyState());
-        isReady = Executor.testUntil(evaluator, timeoutMillis);
-//        } catch (Exception e) {
-//        }
+        Boolean isReady = Executor.testUntil(() -> {
+            ReadyState readyState = ReadyState.uninitialized;
+            readyState = ReadyState.fromString(getReadyState());
+            return readyState.isReady();
+        }, timeoutMillis);
         return isReady;
     }
 
@@ -532,7 +509,10 @@ public class Worker implements AutoCloseable, WorkingContext {
     }
 
     public Boolean waitPageReady() {
-        return waitForReadyState(DefaultPageReadyTimeoutMills, pageLoadedStates);
+//        Logger.V("Start waitPageReady");
+        boolean isReady = waitForReadyState(DefaultPageReadyTimeoutMills, pageLoadedStates);
+//        Logger.V("End of waitPageReady");
+        return isReady;
     }
 
     public final static String isAjaxDoneScript = "return jQuery.active == 0";
@@ -569,6 +549,12 @@ public class Worker implements AutoCloseable, WorkingContext {
             String driverDesc = driver.toString();
             driver.close();
             Logger.V("Driver '%s' is closed successfully.", driverDesc);
+
+            if(activeWorkers.indexOf(this) != -1){
+                Tuple3<Boolean, Worker, String> result = activeWorkers.pop(this);
+                arrangeAll();
+                Executor.sleep(1000);
+            }
         } catch (Exception ex) {
             Logger.W(ex);
         } finally {

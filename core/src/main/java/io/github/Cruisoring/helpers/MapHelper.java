@@ -3,6 +3,7 @@ package io.github.Cruisoring.helpers;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -19,7 +20,7 @@ public class MapHelper {
      * or return the first value case-ignored equalled with the given key.
      * Otherwise, return null.
      */
-    public static String bestMatchedKey(List<String> list, String key) {
+    public static String bestMatchedKey(Collection<String> list, String key) {
         key = key.trim();
         if (StringUtils.isEmpty(key)) {
             Logger.E("key is not supposed to be empty!");
@@ -28,14 +29,13 @@ public class MapHelper {
 
         List<String> matched = new ArrayList();
         List<String> contains = new ArrayList<>();
-        for (int i = 0; i < list.size(); i++) {
-            String v = list.get(i);
-            if (StringUtils.equals(v, key))
-                return v;
-            else if (StringUtils.equalsIgnoreCase(v, key)) {
-                matched.add(v);
-            } else if (StringUtils.containsIgnoreCase(v, key)) {
-                contains.add(v);
+        for (String item : list) {
+            if (StringUtils.equals(item, key))
+                return item;
+            else if (StringUtils.equalsIgnoreCase(item, key)) {
+                matched.add(item);
+            } else if (StringUtils.containsIgnoreCase(item, key)) {
+                contains.add(item);
             }
         }
         if (matched.size() == 0 && contains.size() == 0) {
@@ -51,6 +51,26 @@ public class MapHelper {
             contains.sort((s1, s2) -> s1.length() - s2.length());
             return contains.get(0);
         }
+    }
+
+    public static String bestMatchedKey(List<String> list, Pattern pattern) {
+        Objects.requireNonNull(pattern);
+
+        String matched = list.stream()
+                .filter(item -> pattern.matcher(item).matches())
+                .findFirst().orElse(null);
+
+        return matched;
+    }
+
+    public static String bestMatchedKey(Collection<String> list, List<String> keywords) {
+        Objects.requireNonNull(keywords);
+
+        String matched = list.stream()
+                .filter(item -> keywords.stream().anyMatch(keyword -> StringUtils.containsIgnoreCase(item, keyword)))
+                .findFirst().orElse(null);
+
+        return matched;
     }
 
     /**

@@ -16,8 +16,8 @@ import java.util.stream.Collectors;
 
 public class ListScreen extends Screen {
     private static final Map<String, By> locators = new HashMap<String, By>(){{
-        put("Next", By.cssSelector("i.fa-chevron-right"));
-        put("Previous", By.cssSelector("i.fa-chevron-left"));
+        put("Nexts", By.cssSelector("i.fa-chevron-right"));
+        put("Previouses", By.cssSelector("i.fa-chevron-left"));
     }};
 
 //    public final Navigator navigator;

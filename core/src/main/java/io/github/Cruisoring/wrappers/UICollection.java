@@ -152,6 +152,14 @@ public class  UICollection<T extends UIObject> extends UIObject {
         return children;
     }
 
+    public List<String> getChildrenHTMLs(){
+        List<T> children = getChildren();
+        List<String> outerHTMLs = children.stream()
+                .map(child -> child.getOuterHTML())
+                .collect(Collectors.toList());
+        return outerHTMLs;
+    }
+
     public int size(){
         return getChildren().size();
     }
@@ -163,13 +171,19 @@ public class  UICollection<T extends UIObject> extends UIObject {
 
     public List<String> valuesOf(Function<T, String> getValue) {
         List<T> allChildren = getChildren();
-        List<String> values = allChildren.stream().map(getValue).collect(Collectors.toList());
+        List<String> values = allChildren.parallelStream()
+                .map(getValue).collect(Collectors.toList());
         return values;
     }
 
-    public List<String> textContents(){
+    public List<String> asClasses(){
         invalidate();
-        return valuesOf(c -> c.getTextContent());
+        return valuesOf(UIObject::getElementClass);
+    }
+
+    public List<String> asTexts(){
+        invalidate();
+        return valuesOf(UIObject::getTextContent);
     }
 
     public T get(int index) {

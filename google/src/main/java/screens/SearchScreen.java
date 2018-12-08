@@ -2,6 +2,7 @@ package screens;
 
 import components.ResultItem;
 import io.github.Cruisoring.helpers.Worker;
+import io.github.Cruisoring.workers.Worker;
 import io.github.Cruisoring.wrappers.Screen;
 import io.github.Cruisoring.wrappers.UICollection;
 import io.github.Cruisoring.wrappers.UIEdit;
@@ -35,11 +36,11 @@ public class SearchScreen extends Screen {
         current = new UIObject(navigation, By.cssSelector("td.cur"));
     }
 
-    public void search(String keyword){
-        search.enterText(keyword);
-        submit.clickByScript();
-        search.waitPageReady();
-    }
+//    public void search(String keyword){
+//        search.enterText(keyword);
+//        submit.clickByScript();
+//        search.waitPageReady();
+//    }
 
     @Override
     public void invalidate(){
@@ -50,22 +51,22 @@ public class SearchScreen extends Screen {
     }
 
 
-
-    public boolean openResultPage(final String[] expectedTitleKeys, String expectedUrl){
-        try {
-            invalidate();
-            waitPageReady();
-            ResultItem matched = searchResults.get(
-                    result -> result.isMatched(expectedUrl, expectedTitleKeys));
-            if (matched == null)
-                return false;
-            matched.resultTitle.clickByScript();
-            invalidate();
-            return matched.waitGone();
-        }catch (Exception ex){
-            return false;
-        }
-    }
+//
+//    public boolean openResultPage(final String[] expectedTitleKeys, String expectedUrl){
+//        try {
+//            invalidate();
+//            waitPageReady();
+//            ResultItem matched = searchResults.get(
+//                    result -> result.isMatched(expectedUrl, expectedTitleKeys));
+//            if (matched == null)
+//                return false;
+//            matched.resultTitle.clickByScript();
+//            invalidate();
+//            return matched.waitGone();
+//        }catch (Exception ex){
+//            return false;
+//        }
+//    }
 
     public boolean hasMorePage(){
         return next.isDisplayed();

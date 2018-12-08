@@ -123,7 +123,7 @@ public class Executor{
             }catch (Exception e){
                 if(lastException == null || lastException.getMessage() != e.getMessage()){
                     lastException = e;
-                    Logger.E(e);
+                    Logger.W(e);
                 } else {
                     throw e;
                 }
@@ -306,25 +306,15 @@ public class Executor{
             callables.add(callable);
         });
 
-        ExecutorService EXEC = Executors.newCachedThreadPool();
-        try {
-            List<R> results;
-            results = EXEC.invokeAll(callables)
-                    .stream()
-                    .map(f -> {
-                        try {
-                            return f.get(timeoutMinutes, TimeUnit.MINUTES);
-                        } catch (Exception e) {
-                            Logger.W(e);
-                            return null;
-//                            throw new IllegalStateException(e);
-                        }
-                    })
-                    .collect(Collectors.toList());
-            return results;
-        } finally{
-            EXEC.shutdown();
+        return runParallel(timeoutMinutes, callables);
+    }
+
+    public static <R> List<R> runParallel(long timeoutMinutes, SupplierThrowable<R>... howTos) throws Exception {
+        List<Callable<R>> callables = new ArrayList<>();
+        for (SupplierThrowable<R> func : howTos) {
+            callables.add(() -> func.get());
         }
+        return runParallel(timeoutMinutes, callables);
     }
 
     /**
@@ -354,25 +344,7 @@ public class Executor{
             callables.add(callable);
         });
 
-        ExecutorService EXEC = Executors.newCachedThreadPool();
-        try {
-            List<Boolean> results;
-            results = EXEC.invokeAll(callables)
-                    .stream()
-                    .map(f -> {
-                        try {
-                            return f.get(timeoutMinutes, TimeUnit.MINUTES);
-                        } catch (Exception e) {
-                            Logger.W(e);
-                            return null;
-//                            throw new IllegalStateException(e);
-                        }
-                    })
-                    .collect(Collectors.toList());
-            return results;
-        } finally{
-            EXEC.shutdown();
-        }
+        return runParallel(timeoutMinutes, callables);
     }
 
     public static <T> List<T> runParallel(int nThreads, List<SupplierThrowable<T>> suppliers){
@@ -392,6 +364,28 @@ public class Executor{
             return result.get();
         }catch (Exception ex){
             return null;
+        }
+    }
+
+    public static <R> List<R> runParallel(long timeoutMinutes, List<Callable<R>> callables) throws Exception{
+        ExecutorService EXEC = Executors.newCachedThreadPool();
+        try {
+            List<R> results;
+            results = EXEC.invokeAll(callables)
+                    .stream()
+                    .map(f -> {
+                        try {
+                            return f.get(timeoutMinutes, TimeUnit.MINUTES);
+                        } catch (Exception e) {
+                            Logger.W(e);
+                            return null;
+//                            throw new IllegalStateException(e);
+                        }
+                    })
+                    .collect(Collectors.toList());
+            return results;
+        } finally{
+            EXEC.shutdown();
         }
     }
 }

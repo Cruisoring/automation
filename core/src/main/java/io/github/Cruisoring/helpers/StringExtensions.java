@@ -1,5 +1,7 @@
 package io.github.Cruisoring.helpers;
 
+import io.github.cruisoring.repository.Repository;
+import io.github.cruisoring.tuple.Tuple;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -10,6 +12,7 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 public class StringExtensions {
@@ -38,6 +41,9 @@ public class StringExtensions {
     public static final String attributePatternTemplate = "%s%s([^%c]*?)%s";
 
     public static final Map<String, Pattern> attributeRetrievePatterns = new HashMap<>();
+
+    public static Repository<String, Pattern> LiteralTextPatterns = new Repository<String, Pattern>(literalText -> Pattern.compile(Pattern.quote(literalText)));
+
 
     public static List<String> getUrls(URL baseUrl, String outerHtml){
         Objects.requireNonNull(baseUrl);
@@ -138,7 +144,7 @@ public class StringExtensions {
         if(templateLen==0 || chars == null || chars.length == 0)
             return template;
 
-        Character[] sorted = ArrayHelper.getSorted(chars);
+        Character[] sorted = ArrayUtils.getSorted(chars);
         int sortedLength = sorted.length;
         Character min = sorted[0];
         Character max = sorted[sortedLength-1];
@@ -362,4 +368,154 @@ public class StringExtensions {
         }
     }
 
+    /**
+     * Find indexes of all occurance of concerned pattern in the given text context.
+     * @param context   Text context to be searched.
+     * @param pattern   Pattern to be searched.
+     * @return          A list of indexes.
+     */
+    public static List<Integer> allIndexesOf(String context, Pattern pattern){
+        Objects.requireNonNull(context);
+        Objects.requireNonNull(pattern);
+
+        Matcher matcher = pattern.matcher(context);
+        List<Integer> indexes = new ArrayList<>();
+        while (matcher.find()){
+            indexes.add(matcher.start());
+        }
+        return indexes;
+    }
+
+    /**
+     * FInd index of first occurance of concerned pattern in the given text context.
+     * @param context       Text context to be searched.
+     * @param patternString Pattern string to be searched.
+     * @return  <tt>-1</tt> if not matched, otherwise the index of the first match.
+     */
+    public static int indexOfPatter(String context, String patternString){
+        Objects.requireNonNull(context);
+        Objects.requireNonNull(patternString);
+
+        try {
+            Pattern pattern = Pattern.compile(patternString);
+            Matcher matcher = pattern.matcher(context);
+            return matcher.find() ? matcher.start() : -1;
+        }catch (Exception ex){
+            return -1;
+        }
+    }
+
+    /**
+     * Find indexes of all occurance of concerned literalText in the given text context.
+     * @param context      Text context to be searched.
+     * @param literalText   Literal text to be find from the given template.
+     * @return              A list of indexes if nothing is wrong, otherwise null.
+     */
+    public static List<Integer> allIndexesOf(String context, String literalText){
+        Objects.requireNonNull(context);
+
+        try {
+            if (StringUtils.isEmpty(literalText)) {
+                throw new IllegalArgumentException("literalText shall not be empty to get meaningful indexes");
+            }
+
+            Pattern pattern = LiteralTextPatterns.apply(literalText);
+            return  allIndexesOf(context, pattern);
+        }catch (Exception e){
+            Logger.W(e);
+            return null;
+        }
+    }
+
+    /**
+     * Get the HTML segments with start tag pattern from the given text context.
+     * @param context   Text context to perform the searching.
+     * @param containerPattern Pattern to locate the container first, shall be simple one?
+     * @param pattern   Pattern text of the start tag
+     * @return          Segments with paired tags as a list.
+     */
+    public static List<String> getSegments(String context, Pattern containerPattern, String pattern){
+        List<String> containerContexts = getSegmentsByLeadingPattern(context, containerPattern);
+
+        List<String> segments = containerContexts.stream()
+                .flatMap(ctx -> getSegments(ctx, pattern).stream())
+                .collect(Collectors.toList());
+        return segments;
+    }
+
+    public static List<String> getSegmentsByLeadingPattern(String context, Pattern pattern){
+        Set<String> leadingTags = new HashSet<String>(getSegments(context, pattern));
+        List<String> segments = leadingTags.stream()
+                .map(leading -> getSegments(context, (String)leading))
+                .flatMap(list -> list.stream())
+                .collect(Collectors.toList());
+        return segments;
+    }
+
+    /**
+     * Get the HTML segments with start tag pattern from the given text context.
+     * @param context   Text context to perform the searching.
+     * @param pattern   Pattern text of the start tag
+     * @return          Segments with paired tags as a list.
+     */
+    public static List<String> getSegments(String context, String pattern){
+        Objects.requireNonNull(context);
+        Objects.requireNonNull(pattern);
+        if(!pattern.startsWith("<")){
+            throw new IllegalArgumentException("pattern must take a form of <tagName...");
+        }
+
+        List<String> result = new ArrayList<>();
+        List<Integer> segmentIndexes = allIndexesOf(context, pattern);
+        if(segmentIndexes.isEmpty()){
+            return result;
+        }
+
+        String tagName, startTagKey, endTag;
+        int space = indexOfPatter(pattern, "\\s");
+        tagName = space != -1 ? pattern.substring(1, space) : pattern.substring(1);
+        startTagKey = "<" + tagName;
+        endTag = "</" + tagName;
+        int endTagSize = endTag.length()+1;
+
+        List<Integer> startIndexes = allIndexesOf(context, startTagKey);
+        List<Integer> endIndexes = allIndexesOf(context, endTag);
+        segmentIndexes.add(context.length());
+
+        List<Integer[][]> rangedStartEndIndexes = IntStream.range(0, segmentIndexes.size()-1).boxed()
+                .map(index -> Tuple.create(segmentIndexes.get(index), segmentIndexes.get(index+1)))
+                .map(tuple -> new Integer[][]{
+                        startIndexes.stream()
+                                .filter(i -> i >= tuple.getFirst() && i < tuple.getSecond())
+                                .toArray(size -> new Integer[size]),
+                        endIndexes.stream().
+                                filter(i -> i >= tuple.getFirst() && i < tuple.getSecond())
+                                .toArray(size -> new Integer[size])
+                })
+                .collect(Collectors.toList());
+
+        for (Integer[][] pairedIndexes : rangedStartEndIndexes) {
+            Integer[] starts = pairedIndexes[0];
+            Integer[] ends = pairedIndexes[1];
+            Set<Integer> both = new TreeSet<>(Arrays.asList(starts));
+            both.addAll(Arrays.asList(ends));
+            int depth = 0;
+            Iterator<Integer> iterator = both.iterator();
+            while(iterator.hasNext()) {
+                Integer next = iterator.next();
+                if(org.apache.commons.lang3.ArrayUtils.contains(starts, next)){
+                    depth--;
+                }else {
+                    depth++;
+                }
+                if(depth == 0){
+                    String segment = context.substring(starts[0], next+endTagSize);
+                    result.add(segment);
+                    break;
+                }
+            }
+        }
+
+        return result;
+    }
 }

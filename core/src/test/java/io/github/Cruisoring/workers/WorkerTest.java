@@ -49,7 +49,7 @@ public class WorkerTest {
 
     @Test
     public void getChrome2(){
-        Worker chrome = Worker.create(DriverType.Chrome, null);
+        Worker chrome = Worker.create(DriverType.Chrome, 1, null);
         chrome.gotoUrl("https://httpbin.org/ip");
         chrome.arrangeWindow(Worker.DefaultBrowserRectangls.get(6)[2]);
 
@@ -107,7 +107,7 @@ public class WorkerTest {
 
     @Test
     public void getFirefox() {
-        Worker worker = Worker.create(DriverType.Firefox, null);
+        Worker worker = Worker.create(DriverType.Firefox, 1, null);
         worker.gotoUrl("https://whatismyipaddress.com/");
         Logger.I(MapHelper.asJson(worker.driver.getCapabilities().asMap()));
         worker.arrangeWindow(Worker.DefaultBrowserRectangls.get(3)[1]);
@@ -121,19 +121,19 @@ public class WorkerTest {
 
     @Test
     public void getAllBrowsers(){
-        Worker chrome = Worker.create(DriverType.Chrome, null);
+        Worker chrome = Worker.create(DriverType.Chrome, 1, null);
         chrome.gotoUrl("https://whatismyipaddress.com/");
         Executor.sleep(3000);
-        Worker edge = Worker.create(DriverType.Edge, null);
+        Worker edge = Worker.create(DriverType.Edge, 1, null);
         edge.gotoUrl("https://whatismyipaddress.com/");
         Executor.sleep(3000);
-        Worker firefox = Worker.create(DriverType.Firefox, null);
+        Worker firefox = Worker.create(DriverType.Firefox, 1, null);
         firefox.gotoUrl("https://whatismyipaddress.com/");
         Executor.sleep(3000);
-        Worker opera = Worker.create(DriverType.Opera, null);
+        Worker opera = Worker.create(DriverType.Opera, 1, null);
         opera.gotoUrl("https://whatismyipaddress.com/");
         Executor.sleep(3000);
-        Worker ie = Worker.create(DriverType.IE, null);
+        Worker ie = Worker.create(DriverType.IE, 1, null);
         ie.gotoUrl("https://whatismyipaddress.com/");
         Executor.sleep(3000);
         Worker.closeAll();

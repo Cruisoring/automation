@@ -1,6 +1,6 @@
 package screens;
 
-import io.github.Cruisoring.helpers.Worker;
+import io.github.Cruisoring.workers.Worker;
 import io.github.Cruisoring.wrappers.Screen;
 import io.github.Cruisoring.wrappers.UIObject;
 import components.bookFull;

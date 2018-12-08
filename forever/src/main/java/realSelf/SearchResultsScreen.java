@@ -14,8 +14,8 @@ import java.util.stream.Collectors;
 
 public class SearchResultsScreen extends Screen {
     public static final Map<String, By> navigatorBys = new HashMap<String, By>(){{
-        put("Previous", By.cssSelector("a.Pager-back"));
-        put("Next", By.cssSelector("a.Pager-forward"));
+        put("Previouses", By.cssSelector("a.Pager-back"));
+        put("Nexts", By.cssSelector("a.Pager-forward"));
     }};
 
     public final UICollection doctorList;

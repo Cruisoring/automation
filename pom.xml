@@ -16,6 +16,7 @@
         <module>enfsolar</module>
         <module>enfsolar</module>
         <module>proxies</module>
+        <module>generic</module>
     </modules>
 
     <name>automation aggregator</name>
@@ -40,6 +41,12 @@
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>io.github.cruisoring</groupId>
+            <artifactId>functionExtensions</artifactId>
+            <version>1.0.1</version>
+        </dependency>
+
         <dependency>
             <groupId>org.seleniumhq.selenium</groupId>
             <artifactId>selenium-java</artifactId>

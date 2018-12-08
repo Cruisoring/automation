@@ -11,11 +11,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Stream;
 
 public class Pipe<T> {
-    public final static Duration DefaultMinTimeoutDuration = Duration.ofMillis(10);
+    public final static Duration DefaultMinTimeoutDuration = Duration.ofMillis(100);
 
-    Queue<T> queue = new LinkedList<>();
+    LinkedList<T> queue = new LinkedList<>();
     Lock lock = new ReentrantLock();
     Condition notFull = lock.newCondition();
     Condition notEmpty = lock.newCondition();
@@ -34,6 +35,36 @@ public class Pipe<T> {
         }
         this.capacity = capacity;
         this.minTimeoutDuration = minTimeoutDuration;
+    }
+
+    //TODO: apply lock
+    public int size() {
+        return queue.size();
+    }
+
+    public boolean isFull(){
+        return size() >= capacity;
+    }
+
+    public boolean isEmpty(){
+        return queue.isEmpty();
+    }
+
+    public int indexOf(T item){
+        return queue.indexOf(item);
+    }
+
+    public Stream<T> stream(){
+        return queue.stream();
+    }
+
+    public Tuple3<Boolean, T, String> pushIfAbsent(T item){
+        int index = indexOf(item);
+        if(index == -1){
+            return push(item);
+        } else {
+            return Tuple.create(false, item, "Item already exist");
+        }
     }
 
     public Tuple3<Boolean, T, String> push(T item, Duration timeout) {
@@ -84,6 +115,20 @@ public class Pipe<T> {
     public CompletableFuture<Tuple3<Boolean, T, String>> pushAsync(T item){
         CompletableFuture<Tuple3<Boolean, T, String>> result = CompletableFuture.supplyAsync(() -> push(item));
         return result;
+    }
+
+    public Tuple3<Boolean, T, String> pop(T item){
+        int index = queue.indexOf(item);
+        if(index == -1){
+            return Tuple.create(false, null, String.format("No such item: %s", item));
+        }
+
+        T removed = queue.remove(index);
+        if(removed == item){
+            return Tuple.create(true, removed, null);
+        }
+
+        return Tuple.create(false, removed, String.format("Removed '%s' is not matched with '%s'", removed, item));
     }
 
     public Tuple3<Boolean, T, String> pop(Duration timeout) {

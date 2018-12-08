@@ -14,5 +14,13 @@ public enum ReadyState {
     public static ReadyState fromString(String value) {
         return EnumHelper.toEnum(value, unknown);
     }
+
+    public static boolean isReady(ReadyState state){
+        return state.equals(loaded) || state.equals(complete);
+    }
+
+    public boolean isReady(){
+        return isReady(this);
+    }
 }
 

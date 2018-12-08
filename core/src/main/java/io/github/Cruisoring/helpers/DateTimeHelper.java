@@ -10,13 +10,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Helper utilities to handle APA DateTime in one place.
+ * Helper utilities to handle DateTime in one place.
  */
 public class DateTimeHelper {
     public static final List<String> SysDateIdentifiers = Arrays.asList("%SYSTEM_DATE%", "SYS.DATE", "TODAY", "SYS.TODAY", "SYSTEM.DATE", "SYSTEM_DATE");
-    public static final List<String> TimeNowIdentifiers = Arrays.asList("%TIME_NOW%", "%DATETIME.NOW%", "TIME.NOW", "TIME_NOW", "DATETIME.NOW", "DATETIME_NOW");
     private static final Pattern dateAdjustPattern = Pattern.compile("([+|-])\\s?([\\d]+)");
 
+    public static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
     public static final SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     public static final DateTimeFormatter systemDateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     public static final DateTimeFormatter systemMonthFormatter = DateTimeFormatter.ofPattern("yyyy-MM");
@@ -25,6 +25,10 @@ public class DateTimeHelper {
     public static final DateTimeFormatter shortTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
     public static final DateTimeFormatter shortDateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd");
     public static final DateTimeFormatter dayOnlyFormatter = DateTimeFormatter.ofPattern("dd");
+
+    static {
+        ReportHelper.reportAsStepLog("COMPUTERNAME=%s", System.getenv("COMPUTERNAME"));
+    }
 
     public static ZoneId SystemTimeZoneId = ZoneId.of("Australia/Brisbane");
 
@@ -35,15 +39,6 @@ public class DateTimeHelper {
     public static LocalDateTime getSystemLocalDateTime() {
         return LocalDateTime.now().atZone(ZoneId.systemDefault())
                 .withZoneSameInstant(SystemTimeZoneId).toLocalDateTime();
-    }
-
-    /**
-     * Convert the LocalDate to Brisbane time that are used by APA EC.
-     * @return Converted Brisbane LocalDate.
-     */
-    public static LocalDate getSystemLocalDate() {
-        return LocalDateTime.now().atZone(ZoneId.systemDefault())
-                .withZoneSameInstant(SystemTimeZoneId).toLocalDate();
     }
 
     /**
@@ -73,48 +68,10 @@ public class DateTimeHelper {
      * @return Parsed LocalDateTime.
      */
     public static LocalDateTime parseLocalDateTime(String timeString){
-        Objects.requireNonNull(timeString);
-
-        String bestMatched = MapHelper.containsKeyIgnoreCase(timeString, TimeNowIdentifiers);
-        if (bestMatched != null)
-            return LocalDateTime.now();
-
         try {
             return LocalDateTime.parse(timeString, systemTimeFormatter);
         } catch (DateTimeParseException e){
-            try {
-                return LocalDateTime.parse(timeString, systemTimeFormatter2).plusSeconds(59);
-            } catch (DateTimeParseException e1){
-                return null;
-            }
-        }
-    }
-
-    /**
-     * Parse the string of system date format to get corresponding LocalDate
-     * @param dateString    date string in form of 'yyyy-mm-dd'
-     * @return  parsed LocalDate result.
-     */
-    public static LocalDate dateFromString(String dateString){
-        Objects.requireNonNull(dateString);
-
-        try {
-            return LocalDate.parse(dateString, systemDateFormatter);
-        } catch (DateTimeParseException ex) {
-            String bestMatched = MapHelper.containsKeyIgnoreCase(dateString, SysDateIdentifiers);
-            if (bestMatched == null)
-                return null;
-
-            Matcher matcher = dateAdjustPattern.matcher(dateString);
-            int dayToAdjust = 0;
-            while (matcher.find()) {
-                if (matcher.group(1).equals("+")) {
-                    dayToAdjust += Integer.parseInt(matcher.group(2));
-                } else {
-                    dayToAdjust -= Integer.parseInt(matcher.group(2));
-                }
-            }
-            return LocalDate.now().plusDays(dayToAdjust);
+            return LocalDateTime.parse(timeString, systemTimeFormatter2).plusSeconds(59);
         }
     }
 
@@ -146,15 +103,6 @@ public class DateTimeHelper {
         return date == null ? "null" : systemDateFormatter.format(date);
     }
 
-    /**
-     * Convert the LocalDate instance to short format.
-     * @param date  Date to be formatted.
-     * @return  Short Formatted String.
-     */
-    public static String shortDateString(LocalDate date) {
-        return date == null ? "null" : shortDateFormatter.format(date);
-    }
-
     public static String dateString(Date date) {
         return date == null ? "null" :
                 dateTimeFormat.format(date).replace(" 00:00:00", "");
@@ -164,8 +112,44 @@ public class DateTimeHelper {
         return month == null ? "null" : systemMonthFormatter.format(month);
     }
 
-    public static String yearMonthString(LocalDate date){
-        return date == null ? "null" : systemMonthFormatter.format(date);
+    /**
+     * Parse the string of system date format to get corresponding LocalDate
+     * @param dateString    date string in form of 'yyyy-mm-dd'
+     * @return  parsed LocalDate result.
+     */
+    public static LocalDate dateFromString(String dateString){
+        Objects.requireNonNull(dateString);
+
+        try {
+            return LocalDate.parse(dateString, systemDateFormatter);
+        } catch (DateTimeParseException ex) {
+            String bestMatched = MapHelper.containsKeyIgnoreCase(dateString, SysDateIdentifiers);
+            if (bestMatched == null)
+                return null;
+
+            Matcher matcher = dateAdjustPattern.matcher(dateString);
+            int dayToAdjust = 0;
+            while (matcher.find()) {
+                if (matcher.group(1).equals("+")) {
+                    dayToAdjust += Integer.parseInt(matcher.group(2));
+                } else {
+                    dayToAdjust -= Integer.parseInt(matcher.group(2));
+                }
+            }
+            return LocalDate.now().plusDays(dayToAdjust);
+        }
+    }
+
+    public static LocalDate dateFromString(String dateString, String... formats){
+        for (String formatString : formats)
+        {
+            try {
+                return LocalDate.parse(dateString, DateTimeFormatter.ofPattern(formatString));
+            }
+            catch (Exception e) {}
+        }
+
+        return null;
     }
 
     /**
@@ -259,6 +243,4 @@ public class DateTimeHelper {
         Date date = new GregorianCalendar(year, month-1, dayOfMonth).getTime();
         return date;
     }
-
 }
-

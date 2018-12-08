@@ -8,7 +8,6 @@ import io.github.Cruisoring.wrappers.UIObject;
 import org.apache.commons.lang3.StringUtils;
 import org.openqa.selenium.By;
 
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -47,7 +46,7 @@ public class ProductsNavigator extends UIObject {
     }
 
     public int getPageCount(){
-        List<String> pageTexts = pages.textContents();
+        List<String> pageTexts = pages.asTexts();
         for(int i = pageTexts.size()-1; i>=0; i--) {
             String text = pageTexts.get(i);
             if(StringUtils.isNotEmpty(text))
@@ -89,7 +88,7 @@ public class ProductsNavigator extends UIObject {
         }
 
         waitPageReady();
-        List<String> pageNumbers = pages.textContents();
+        List<String> pageNumbers = pages.asTexts();
         List<Integer> numbers = pageNumbers.stream()
                 .map(text -> StringExtensions.asInt(text, -1))
                 .collect(Collectors.toList());

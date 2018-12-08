@@ -2,6 +2,7 @@ package io.github.Cruisoring.helpers;
 
 import io.github.Cruisoring.enums.LogLevel;
 import io.github.Cruisoring.wrappers.UIObject;
+import io.github.cruisoring.tuple.Tuple3;
 import org.apache.commons.lang3.StringUtils;
 
 import java.time.LocalDateTime;
@@ -80,45 +81,46 @@ public class Logger {
 
     // Background
     public static final String BLACK_BACKGROUND = "\033[40m";  // BLACK
-    public static final String RED_BACKGROUND = "\033[41m";    // RED
-    public static final String GREEN_BACKGROUND = "\033[42m";  // GREEN
-    public static final String YELLOW_BACKGROUND = "\033[43m"; // YELLOW
-    public static final String BLUE_BACKGROUND = "\033[44m";   // BLUE
-    public static final String PURPLE_BACKGROUND = "\033[45m"; // PURPLE
-    public static final String CYAN_BACKGROUND = "\033[46m";   // CYAN
-    public static final String WHITE_BACKGROUND = "\033[47m";  // WHITE
+    public static final String DARK_GRAY_BACKGROUND = "\033[100m";  // BLACK
+    public static final String RED_BACKGROUND = "\033[101m";    // RED
+    public static final String GREEN_BACKGROUND = "\033[102m";  // GREEN
+    public static final String YELLOW_BACKGROUND = "\033[103m"; // YELLOW
+    public static final String BLUE_BACKGROUND = "\033[104m";   // BLUE
+    public static final String PURPLE_BACKGROUND = "\033[105m"; // PURPLE
+    public static final String CYAN_BACKGROUND = "\033[106m";   // CYAN
+    public static final String WHITE_BACKGROUND = "\033[107m";  // WHITE
 
-    static final BiFunction<LogLevel, String, String> defaultMessageFormmater = (l, m) -> {
-        String label = String.format("[%s]@%s:", StringUtils.upperCase(l.toString()).charAt(0),
+    static final BiFunction<LogLevel, String, String> defaultMessageFormmater = (level, time) -> {
+        String label = String.format("[%s]@%s:", StringUtils.upperCase(level.toString()).charAt(0),
                 LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_TIME));
-        switch (l.toString()) {
-            case "verbose":
-                return String.format("%s%s %s%s", BLACK_BACKGROUND+WHITE, label, m, ANSI_RESET);
-            case "debug":
-                return String.format("%s%s %s%s", WHITE_BACKGROUND, label, m, ANSI_RESET);
-            case "info":
-                return String.format("%s%s %s%s", CYAN_BACKGROUND, label, m, ANSI_RESET);
-            case "warning":
-                return String.format("%s%s %s%s", YELLOW_BACKGROUND+BLUE_BOLD, label, m, ANSI_RESET);
-            case "error":
-                return String.format("%s%s %s%s", RED_BOLD, label, m, ANSI_RESET);
+        switch (level) {
+            case verbose:
+                return String.format("%s%s %s%s", WHITE_BACKGROUND+BLUE, label, time, ANSI_RESET);
+            case debug:
+                return String.format("%s%s %s%s", PURPLE_UNDERLINED, label, time, ANSI_RESET);
+            case info:
+                return String.format("%s%s %s%s", CYAN_BACKGROUND+BLACK, label, time, ANSI_RESET);
+            case warning:
+                return String.format("%s%s %s%s", YELLOW_BACKGROUND+PURPLE_UNDERLINED, label, time, ANSI_RESET);
+            case error:
+                return String.format("%s%s %s%s", RED_BACKGROUND+BLACK_BOLD, label, time, ANSI_RESET);
             default:
-                return String.format("%s %s%s", label, m, ANSI_RESET);
+                return String.format("%s %s%s", label, time, ANSI_RESET);
         }
     };
 
-    static final Function<LogLevel, Integer> getDefaultStackCount = (l) -> {
-        switch (l.toString()) {
-            case "verbose":
-                return -5;
-            case "debug":
+    static final Function<LogLevel, Integer> getDefaultStackCount = level -> {
+        switch (level) {
+            case verbose:
+                return -2;
+            case debug:
                 return 3;
-            case "info":
-                return 0;
-            case "warning":
-                return 0;
-            case "error":
+            case info:
                 return 3;
+            case warning:
+                return 5;
+            case error:
+                return 8;
             default:
                 return 0;
         }
@@ -180,7 +182,32 @@ public class Logger {
                 .collect(Collectors.toList());
     }
 
-    //TODO: check availability of RxJava, or replace with Observable<Message> instead?
+    private static final Pipe<String> recentExceptionMessages = new Pipe<String>(10);
+    static String lastMessage;
+    static Logger logException(LogLevel logLevel, Exception ex){
+        if(OnlyDefaultLogger != null) {
+            String message = ex.getMessage();
+            if(StringUtils.equalsIgnoreCase(message, lastMessage)){
+                return OnlyDefaultLogger;
+            }
+            Tuple3<Boolean, String, String> tuple = recentExceptionMessages.pushIfAbsent(message);
+            if(tuple.getFirst() && StringUtils.isNotEmpty(tuple.getSecond())) {
+                OnlyDefaultLogger.log(logLevel, message);
+                String stackTrace = getStackTrace(getDefaultStackCount.apply(logLevel));
+                OnlyDefaultLogger.log(logLevel, stackTrace);
+            } else {
+                message = message.substring(0, message.indexOf('\n'));
+                OnlyDefaultLogger.log(logLevel, String.format("Same error as recent one: %s", message));
+            }
+
+            if(recentExceptionMessages.isFull()){
+                recentExceptionMessages.pop();
+            }
+        }
+        return OnlyDefaultLogger;
+
+    }
+
     static final Logger OnlyDefaultLogger = new Logger(System.out::println,
             LogLevel.verbose,
             LogLevel.debug,
@@ -195,38 +222,23 @@ public class Logger {
     }
 
     public static Logger V(Exception ex) {
-        if(OnlyDefaultLogger != null) {
-            OnlyDefaultLogger.log(LogLevel.verbose, ex);
-        }
-        return OnlyDefaultLogger;
+        return logException(LogLevel.verbose, ex);
     }
 
     public static Logger D(Exception ex) {
-        if(OnlyDefaultLogger != null) {
-            OnlyDefaultLogger.log(LogLevel.debug, ex);
-        }
-        return OnlyDefaultLogger;
+        return logException(LogLevel.debug, ex);
     }
 
     public static Logger I(Exception ex) {
-        if(OnlyDefaultLogger != null) {
-            OnlyDefaultLogger.log(LogLevel.info, ex);
-        }
-        return OnlyDefaultLogger;
+        return logException(LogLevel.info, ex);
     }
 
     public static Logger W(Exception ex) {
-        if(OnlyDefaultLogger != null) {
-            OnlyDefaultLogger.log(LogLevel.warning, ex);
-        }
-        return OnlyDefaultLogger;
+        return logException(LogLevel.warning, ex);
     }
 
     public static Logger E(Exception ex) {
-        if(OnlyDefaultLogger != null) {
-            OnlyDefaultLogger.log(LogLevel.error, ex);
-        }
-        return OnlyDefaultLogger;
+        return logException(LogLevel.error, ex);
     }
 
     public static Logger V(String format, Object... args){
@@ -254,8 +266,6 @@ public class Logger {
     public static Logger W(String format, Object... args){
         if(OnlyDefaultLogger != null ){
             OnlyDefaultLogger.log(LogLevel.warning, format, args);
-            String stackTrace = getStackTrace(getDefaultStackCount.apply(LogLevel.warning));
-            OnlyDefaultLogger.log(LogLevel.verbose, stackTrace);
         }
         return OnlyDefaultLogger;
     }
@@ -311,11 +321,15 @@ public class Logger {
         this(output, defaultMessageFormmater, first, rest);
     }
 
+    LocalDateTime lastMessageUntil = LocalDateTime.MIN;
     public void log(LogLevel level, String message) {
         if(output != null && levels.contains(level)) {
-            String finalOutput = messageFormatter.apply(level, message);
-//            lastLogLevel = level;
-            output.accept(finalOutput);
+            if(!StringUtils.equals(lastMessage, message) || LocalDateTime.now().isAfter(lastMessageUntil)){
+                lastMessage = message;
+                lastMessageUntil = LocalDateTime.now().plusSeconds(10);
+                String finalOutput = messageFormatter.apply(level, message);
+                output.accept(finalOutput);
+            }
         }
     }
 
