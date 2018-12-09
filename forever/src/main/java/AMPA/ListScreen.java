@@ -7,11 +7,9 @@ import io.github.Cruisoring.helpers.Worker;
 import io.github.Cruisoring.wrappers.Screen;
 import io.github.Cruisoring.wrappers.UICollection;
 import io.github.Cruisoring.wrappers.UINavigator;
-import io.github.Cruisoring.wrappers.UIObject;
 import org.openqa.selenium.By;
 
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,7 +53,7 @@ public class ListScreen extends Screen {
     public Map<String, String> getAllSchoolAddresses(){
         Map<String, String> map = getSchoolAddresses();
         while (!navigator.isLastPage()){
-            navigator.goNext();
+            navigator.goPageOrNext();
             map.putAll(getSchoolAddresses());
         }
         return map;
@@ -77,7 +75,7 @@ public class ListScreen extends Screen {
     public List<String> getAllLinks(URL baseUrl){
         List<String> allLinks = getDisplayedLinks(baseUrl);
         while (!navigator.isLastPage()){
-            navigator.goNext();
+            navigator.goPageOrNext();
             allLinks.addAll(getDisplayedLinks(baseUrl));
         }
         return allLinks;

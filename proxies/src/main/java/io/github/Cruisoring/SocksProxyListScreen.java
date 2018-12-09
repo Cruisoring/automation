@@ -47,7 +47,7 @@ public class SocksProxyListScreen extends Screen {
     public List<Proxy> getAllProxies(){
         List<Proxy> proxies = getProxies();
         while (!navigator.isLastPage()) {
-            navigator.goNext();
+            navigator.goPageOrNext();
             proxies.addAll(getProxies());
         }
         return proxies;

@@ -14,11 +14,14 @@ import org.openqa.selenium.interactions.Action;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.interactions.internal.Locatable;
 
+import java.net.URL;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * Base class to wrap WebElement.
@@ -112,14 +115,35 @@ public class UIObject implements IUIObject {
     }
 
     public synchronized List<WebElement> getAllElements() {
+        try {
+            List<WebElement> elements = parent.findElements(locator);
+            return elements;
+        } catch (Exception e){
+            Logger.V(e);
+            return new ArrayList<WebElement>();
+        }
+    }
 
-        List<WebElement> elements = parent.findElements(locator);
-        return elements;
+    public synchronized List<WebElement> getVisibleElements() {
+        try {
+            List<WebElement> elements = parent.findElements(locator);
+            elements = elements.stream().filter(e -> e.isDisplayed())
+                    .collect(Collectors.toList());
+            return elements;
+        } catch (Exception e){
+            Logger.V(e);
+            return new ArrayList<WebElement>();
+        }
     }
 
     public synchronized Integer getElementsCount() {
-        List<WebElement> elements = parent.findElements(locator);
-        return elements.size();
+        try {
+            List<WebElement> elements = parent.findElements(locator);
+            return elements.size();
+        } catch (Exception e){
+            Logger.V(e);
+            return 0;
+        }
     }
 
     protected synchronized WebElement tryGetElement() {
@@ -131,7 +155,7 @@ public class UIObject implements IUIObject {
             if (size == 0) {
                 result = null;
             } else if (index != null) {
-                result = elements.get(index);
+                result = elements.get(index < 0 ? (size+index) % size : index);
             } else {
                 for (int i = 0; i < size; i++) {
                     if (worker.isVisible(elements.get(i))) {
@@ -140,10 +164,6 @@ public class UIObject implements IUIObject {
                 }
                 return elements.get(0);
             }
-        } catch (StaleElementReferenceException stale){
-
-        } catch (NullPointerException e){
-
         } catch (Exception ex) {
             Logger.V(ex);
         }
@@ -597,7 +617,7 @@ public class UIObject implements IUIObject {
     @Override
     public Boolean perform(String instruction){
         return perform(new Runnable[]{
-                () -> getElement().click(),
+                () -> this.click(),
                 () -> this.clickByScript()
         }, null, -1);
     }
@@ -612,16 +632,25 @@ public class UIObject implements IUIObject {
 
     @Override
     public boolean click(int waitReadyMills){
-        click();
-        Logger.V("clicked on %s", this);
-        if(waitReadyMills < 0)
-            waitReadyMills = DefaultWaitChangesMills;
-        if(worker.driverType == DriverType.IE){
-            sleep(waitReadyMills);
-            return true;
-        }else {
-            sleep(1000);
-            return worker.waitPageReady(waitReadyMills);
+        try {
+            Point location = getElement().getLocation();
+            perform(new Runnable[]{
+                    () -> this.clickByScript(),
+                    () -> this.getElement().click()
+            }, () -> !this.isVisible() || getElement().getLocation().y != location.y, -1);
+            Logger.V("clicked on %s", this);
+            if (waitReadyMills < 0)
+                waitReadyMills = DefaultWaitChangesMills;
+            if (worker.driverType == DriverType.IE) {
+                sleep(waitReadyMills);
+                return true;
+            } else {
+                sleep(1000);
+                return worker.waitPageReady(waitReadyMills);
+            }
+        } catch (Exception e){
+            Logger.D(e);
+            return false;
         }
     }
 

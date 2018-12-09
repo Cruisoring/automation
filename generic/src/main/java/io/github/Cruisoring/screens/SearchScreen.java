@@ -1,21 +1,28 @@
 package io.github.Cruisoring.screens;
 
 
-import io.github.Cruisoring.helpers.DateTimeHelper;
-import io.github.Cruisoring.interfaces.WorkingContext;
+import io.github.Cruisoring.helpers.Executor;
+import io.github.Cruisoring.helpers.Logger;
+import io.github.Cruisoring.helpers.Randomizer;
 import io.github.Cruisoring.workers.Worker;
 import io.github.Cruisoring.wrappers.*;
 import io.github.cruisoring.Lazy;
+import io.github.cruisoring.function.RunnableThrowable;
+import io.github.cruisoring.function.SupplierThrowable;
+import io.github.cruisoring.repository.Repository;
+import io.github.cruisoring.tuple.Tuple;
+import io.github.cruisoring.tuple.Tuple4;
+import io.github.cruisoring.tuple.Tuple8;
 import org.apache.commons.lang3.StringUtils;
 import org.openqa.selenium.By;
 
-import java.net.URL;
-import java.time.LocalDate;
 import java.util.*;
+import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.regex.Matcher;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class SearchScreen extends Screen {
     public static final String InputBoxKey = "InputBox";
@@ -32,6 +39,60 @@ public class SearchScreen extends Screen {
                     "(\\d{4}年\\d{1,2}月\\d{1,2}日)" + "|" +     //Baidu
                     "(\\d{4}-\\d{1,2}-\\d{1,2}))");             //Bing
 
+    public static final Map<String, Tuple8<By, By, By, By, By, By, By, By>> commonLocatorsOfEngines = new HashMap<String, Tuple8<By, By, By, By, By, By, By, By>>(){
+        {
+            put("google.com", Tuple.create(
+                    By.cssSelector("input[type='text'][title='Search']"),
+                    By.cssSelector("[aria-label='Google Search']"),
+                    By.cssSelector("div#rso"),
+                    By.cssSelector("div.g"),
+                    By.cssSelector("h3"),
+                    By.cssSelector("div.r>a"),
+                    By.cssSelector("span.st>span.f"),
+                    By.cssSelector("span.st")
+                    ));
+            put("aol.com", Tuple.create(
+                    By.cssSelector("input.navigation-search-box, input#yschsp"),
+                    By.cssSelector("button.navigation-search-btn"),
+                    By.cssSelector("ol.searchCenterMiddle"),
+                    By.cssSelector("li>div.algo"),
+                    By.cssSelector("h3"),
+                    By.cssSelector("h3>a"),
+                    By.cssSelector("notExist"),
+                    By.cssSelector("div.compText")
+            ));
+            put("ask.com", Tuple.create(
+                    By.cssSelector("input.search-box-input"),
+                    By.cssSelector("button[type='submit']"),
+                    By.cssSelector("div.PartialSearchResults-body"),
+                    By.cssSelector("div.PartialSearchResults-item"),
+                    By.cssSelector("div.PartialSearchResults-item-title"),
+                    By.cssSelector("div.PartialSearchResults-item-title>a"),
+                    By.cssSelector("p.PartialSearchResults-item-abstract"),
+                    By.cssSelector("p.PartialSearchResults-item-abstract")
+            ));
+            put("baidu.com", Tuple.create(
+                    By.cssSelector("input#kw"),
+                    By.cssSelector("input[type='submit']"),
+                    By.cssSelector("div#content_left"),
+                    By.cssSelector("div.result"),
+                    By.cssSelector("h3"),
+                    By.cssSelector("h3>a"),
+                    By.cssSelector("span[class*='TimeFactor']"),
+                    By.cssSelector("h3>div.c-abstract")
+                    ));
+            put("bing.com", Tuple.create(
+                    By.cssSelector("input[type='search']"),
+                    By.cssSelector("input[type='submit']"),
+                    By.cssSelector("ol#b_results"),
+                    By.cssSelector("li.b_algo"),
+                    By.cssSelector("h2"),
+                    By.cssSelector("h2>a"),
+                    By.cssSelector("div.b_caption>p"),
+                    By.cssSelector("div.b_caption>p")
+            ));
+        }
+    };
     public static final Map<String, List<String>> commonLocators = new HashMap<String, List<String>>(){
         {
             //Search input box
@@ -51,8 +112,8 @@ public class SearchScreen extends Screen {
             put(ResultListKey, Arrays.asList(
                     "div#rso",                              //Google
                     "ol.searchCenterMiddle",                //AOL
-                    "div#content_left",                     //Baidu
-                    "div#PartialSearchResults-body",        //Ask
+                    "div.content_left","div#content_left",  //Baidu
+                    "div.PartialSearchResults-body",        //Ask
                     "ol#b_results"));                       //Bing
             //Result items
             put(ResultItemKey, Arrays.asList(
@@ -91,7 +152,7 @@ public class SearchScreen extends Screen {
         }
     };
 
-    private static By getBy(String key){
+    public static By getBy(String key){
         if(!commonLocators.containsKey(key)) {
             throw new IllegalArgumentException();
         }
@@ -99,47 +160,6 @@ public class SearchScreen extends Screen {
         String combinedLocators = commonLocators.get(key).stream()
                 .collect(Collectors.joining(", "));
         return By.cssSelector(combinedLocators);
-    }
-
-    public class ResultItem extends UIObject {
-
-        final UIObject title;
-        final UILink link;
-        final UIObject time;
-        final UIObject description;
-
-        public ResultItem(WorkingContext context) {
-            super(context, getBy(ResultItemKey));
-            this.title = new UIObject(this, getBy(ResultTitleKey));
-            this.link = new UILink(this, getBy(ResultLinkKey));
-            this.time = new UIObject(this, getBy(ResultTimeKey));
-            this.description = new UIObject(this, getBy(ResultDescriptionKey));
-        }
-
-        public String getTitle(){
-            return title.getTextContent().trim();
-        }
-
-        public String getUrl(){
-            String url = link.getURL();
-            return url;
-        }
-
-        public LocalDate getPublishTime(){
-            if(!time.isVisible())
-                return null;
-
-            String text = time.getAllText().trim();
-            Matcher matcher = dateInSearchResultPattern.matcher(text);
-            if(matcher.matches()){
-                return DateTimeHelper.dateFromString(matcher.group());
-            }
-            return null;
-        }
-
-        public String getDescription(){
-            return description.getAllText();
-        }
     }
 
     final UIEdit inputBox;
@@ -151,20 +171,20 @@ public class SearchScreen extends Screen {
         super(worker);
         inputBox = new UIEdit(this, getBy(InputBoxKey));
         searchButton = new UIObject(this, getBy(SearchButtonKey));
-        resultItems = new UICollection<ResultItem>(this, getBy(ResultListKey), getBy(ResultItemKey));
+        resultItems = new UICollection<ResultItem>(this, getBy(ResultListKey), 0, ResultItem.class, getBy(ResultItemKey));
         navigatorLazy = new Lazy<UINavigator>(this::getNavigatorByUrl);
     }
 
     private UINavigator getNavigatorByUrl(){
         String url = getWorker().getUrl().toString();
         if(StringUtils.containsIgnoreCase(url, "google.com")){
-            return new UINavigator(this, By.cssSelector("div#navcnt tbody"), By.cssSelector("a"));
+            return new UINavigator(this, By.cssSelector("div#navcnt tbody"), By.cssSelector("td span"));
         } else if(StringUtils.containsIgnoreCase(url, "aol.com")){
             return new UINavigator(this, By.cssSelector("div.compPagination"), By.cssSelector("div.compPagination>strong, div.compPagination>a"));
         } else if(StringUtils.containsIgnoreCase(url, "baidu.com")){
             return new UINavigator(this, By.cssSelector("div#page"), By.cssSelector("div#page>a, div#page>strong"));
         } else if(StringUtils.containsIgnoreCase(url, "ask.com")){
-            return new UINavigator(this, By.cssSelector("ul.PartialWebPagination"));
+            return new UINavigator(this, By.cssSelector("ul.PartialWebPagination"), By.cssSelector("a"));
         } else if(StringUtils.containsIgnoreCase(url, "bing.com")){
             return new UINavigator(this, By.cssSelector("nav[role='navigation'] h4+ul"), By.cssSelector("li>a"));
         }
@@ -172,15 +192,84 @@ public class SearchScreen extends Screen {
         throw new IllegalStateException("The UINavigator must be defined with at least one locator!");
     }
 
-    public void gotoLastPage(String keywords){
-        inputBox.enterByScript(keywords);
-        searchButton.click(3000);
-        int pageNumber = 0;
-        while (!navigatorLazy.getValue().isLastPage()){
+    public Map<String, Boolean> searchToLast(int maxPageToSearch, Function<String, String> titlePredicate, Predicate<String> linkPredicate, String... keywords){
+        List<Integer> randomIndexes = Randomizer.getRandomIndex(keywords.length);
+
+        Map<String, Boolean> result = new HashMap<>();
+
+        for(int i=0; i<keywords.length; i++) {
+            String nextKey = keywords[randomIndexes.get(i)];
+
+            inputBox.enterByScript(nextKey);
+            searchButton.click(-1);
+
+            int pageNumber = 0;
             UINavigator navigator = navigatorLazy.getValue();
-            navigator.scrollIntoViewByScript(true);
-            navigator.highlight(UIObject.DefaultHighlightScript, 1000);
-            navigator.goNext(String.valueOf(pageNumber));
+            navigator.waitDisplayed();
+            SupplierThrowable<Set<ResultItem>> getResultItems = () ->
+                    getMatchedItems(titlePredicate, linkPredicate);
+            SupplierThrowable<Set<ResultItem>> scrollOnly = () -> {
+                worker.scrollSmoothly(0, 10, 20);
+                return null;
+            };
+
+            while (navigator.isVisible() && !navigator.isLastPage() && ++pageNumber < maxPageToSearch){
+
+                Set<ResultItem> resultItems = Executor.getParallel( Arrays.asList(getResultItems, scrollOnly))
+                        .stream().filter(items -> items != null).findFirst().orElse(null);
+
+                worker.scrollSmoothly(0, -20, 10);
+                if(resultItems != null && !resultItems.isEmpty()) {
+                    for (ResultItem item : resultItems) {
+                        result.putIfAbsent(nextKey, true);
+                        item.scrollIntoView();
+                        item.title.executeScript("var e =arguments[0]; e.style.color='yellow';e.style.backgroundColor='red';");
+                        Executor.sleep(500);
+
+                        item.link.click(-1);
+                        getWorker().scrollSmoothly(0, 100, 20);
+                        getWorker().goBack();
+                    }
+                }
+
+                navigator.scrollIntoView();
+                Executor.sleep(1000);
+                navigator.gotoPageOrNext(String.valueOf(pageNumber+1));
+            }
+            result.putIfAbsent(nextKey, false);
         }
+        return result;
+    }
+
+    private void updateTitleColor(Integer index, String color){
+        if(color != null){
+            resultItems.get(index).title.executeScript(String.format("var e=arguments[0]; e.style.color='white';e.style.backgroundColor='%s';", color));
+        }
+    }
+
+    private Set<ResultItem> getMatchedItems(Function<String, String> asColor, Predicate<String> linkPredicate){
+        try {
+            final List<String> titles = resultItems.valuesOf(item -> item.getTitle());
+            List<String> links = resultItems.valuesOf(item -> item.link.getURL());
+
+            List<RunnableThrowable> applyColors = new ArrayList<>();
+            for (int i = 0; i < titles.size(); i++) {
+                final Integer index = i;
+                String color = asColor.apply(titles.get(i));
+                applyColors.add(() -> updateTitleColor(index, color));
+            }
+
+            Executor.runParallel(applyColors);
+
+            Set<ResultItem> matchedResults = IntStream.range(0, links.size()).boxed()
+                    .filter(j -> linkPredicate.test(links.get(j)))
+                    .map(j -> resultItems.get(j))
+                    .collect(Collectors.toSet());
+            return matchedResults;
+        }catch (Exception e){
+            Logger.I(e);
+            return new TreeSet<ResultItem>();
+        }
+
     }
 }

@@ -112,7 +112,7 @@ public class Logger {
     static final Function<LogLevel, Integer> getDefaultStackCount = level -> {
         switch (level) {
             case verbose:
-                return -2;
+                return 5;
             case debug:
                 return 3;
             case info:
@@ -187,6 +187,8 @@ public class Logger {
     static Logger logException(LogLevel logLevel, Exception ex){
         if(OnlyDefaultLogger != null) {
             String message = ex.getMessage();
+            if(message == null)
+
             if(StringUtils.equalsIgnoreCase(message, lastMessage)){
                 return OnlyDefaultLogger;
             }
@@ -196,7 +198,7 @@ public class Logger {
                 String stackTrace = getStackTrace(getDefaultStackCount.apply(logLevel));
                 OnlyDefaultLogger.log(logLevel, stackTrace);
             } else {
-                message = message.substring(0, message.indexOf('\n'));
+                message = (message == null ? ex.toString() : message).substring(0, message.indexOf('\n'));
                 OnlyDefaultLogger.log(logLevel, String.format("Same error as recent one: %s", message));
             }
 

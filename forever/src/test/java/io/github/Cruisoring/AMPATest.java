@@ -4,24 +4,14 @@ import AMPA.ListScreen;
 import io.github.Cruisoring.helpers.*;
 import AMPA.DetailScreen;
 import io.github.Cruisoring.wrappers.UIObject;
-import io.github.Cruisoring.wrappers.UITable;
 import io.github.cruisoring.Functions;
-import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 
 import java.io.*;
-import java.net.Proxy;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class AMPATest {
 
@@ -143,7 +133,7 @@ public class AMPATest {
                 if(listScreen.navigator.isLastPage()){
                     break;
                 }
-                listScreen.navigator.goNext();
+                listScreen.navigator.goPageOrNext();
                 listScreen.invalidate();
             } while(true);
 

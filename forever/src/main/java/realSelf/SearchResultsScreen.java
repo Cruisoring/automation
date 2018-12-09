@@ -38,7 +38,7 @@ public class SearchResultsScreen extends Screen {
     public List<Doctor> getAllDoctors(){
         List<Doctor> doctors = getDoctorList();
         while (!navigator.isLastPage()){
-            navigator.goNext();
+            navigator.goPageOrNext();
             doctors.addAll(getDoctorList());
         }
         return doctors;

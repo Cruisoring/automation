@@ -1,6 +1,5 @@
 package io.github.Cruisoring.screens;
 
-import io.github.Cruisoring.components.Navigator;
 import io.github.Cruisoring.helpers.Logger;
 import io.github.Cruisoring.helpers.StringExtensions;
 import io.github.Cruisoring.helpers.Worker;
@@ -50,7 +49,7 @@ public class ListScreen extends Screen {
     public List<String> getAllLinks(URL baseUrl){
         List<String> links = getLinks(baseUrl);
         while (!navigator.isLastPage()) {
-            navigator.goNext();
+            navigator.goPageOrNext();
             links.addAll(getLinks(baseUrl));
         }
         return links;

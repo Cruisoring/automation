@@ -80,6 +80,11 @@ public class  UICollection<T extends UIObject> extends UIObject {
                     }
                     return null;
                 });
+            }else {
+                String constructors = constructorMap.keySet().stream().collect(Collectors.joining(", "));
+                Logger.E("Constructor of %s is not enough: %s", childClass.getName(), constructors);
+                String message = String.format("%s shall define at least %s or %s", childClass.getName(), commonConstrcutorKey, alternativeConstrcutorKey);
+                throw new IllegalStateException(message);
             }
 
             if(creatable != null){
@@ -105,6 +110,10 @@ public class  UICollection<T extends UIObject> extends UIObject {
     public UICollection(WorkingContext context, By by, Integer containerIndex, Class<? extends UIObject> childClass, By childrenBy){
         this(context, by, containerIndex,
                 getChildFactory(childClass, childrenBy));
+    }
+
+    public UICollection(WorkingContext context, By by, Integer containerIndex, By childrenBy){
+        this(context, by, containerIndex, UIObject.class, childrenBy);
     }
 
     public UICollection(WorkingContext context, By by, By childrenBy){
@@ -149,6 +158,9 @@ public class  UICollection<T extends UIObject> extends UIObject {
         children.clear();
         children.addAll(tryGetChildren());
         childrenValidUntil = LocalDateTime.now().plusSeconds(DefaultChildrenValidSeconds);
+        if(children == null){
+            Logger.D("Children of %s is null.", this);
+        }
         return children;
     }
 
@@ -169,10 +181,10 @@ public class  UICollection<T extends UIObject> extends UIObject {
         return getChildren();
     }
 
-    public List<String> valuesOf(Function<T, String> getValue) {
+    public List<String> valuesOf(FunctionThrowable<T, String> getValue) {
         List<T> allChildren = getChildren();
         List<String> values = allChildren.parallelStream()
-                .map(getValue).collect(Collectors.toList());
+                .map(getValue.orElse(null)).collect(Collectors.toList());
         return values;
     }
 
@@ -183,7 +195,7 @@ public class  UICollection<T extends UIObject> extends UIObject {
 
     public List<String> asTexts(){
         invalidate();
-        return valuesOf(UIObject::getTextContent);
+        return valuesOf(UIObject::getAllText);
     }
 
     public T get(int index) {
@@ -193,12 +205,12 @@ public class  UICollection<T extends UIObject> extends UIObject {
 
     public T getFirst(){
         int size = size();
-        return size == 0 ? null : children.get(0);
+        return size == 0 ? null : get(0);
     }
 
     public T getLast(){
         int size = size();
-        return size == 0 ? null : children.get(size-1);
+        return size == 0 ? null : get(-1);
     }
 
     public T get(FunctionThrowable<T, String> valueExtractor, Predicate<String>... predicates) {

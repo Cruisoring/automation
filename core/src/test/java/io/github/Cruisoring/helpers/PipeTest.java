@@ -1,13 +1,11 @@
 package io.github.Cruisoring.helpers;
 
 import io.github.cruisoring.function.SupplierThrowable;
-import io.github.cruisoring.tuple.Tuple2;
 import io.github.cruisoring.tuple.Tuple3;
 import org.junit.Test;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -207,6 +205,6 @@ public class PipeTest {
             suppliers.add(() -> consumer.execute(10000));
         }
 
-        Executor.runParallel(10, suppliers);
+        Executor.getParallel(suppliers);
     }
 }

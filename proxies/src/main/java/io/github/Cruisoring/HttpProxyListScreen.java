@@ -1,22 +1,15 @@
 package io.github.Cruisoring;
 
 
-import io.github.Cruisoring.helpers.Executor;
-import io.github.Cruisoring.helpers.MapHelper;
 import io.github.Cruisoring.helpers.URLHelper;
 import io.github.Cruisoring.workers.Worker;
 import io.github.Cruisoring.wrappers.Screen;
 import io.github.Cruisoring.wrappers.UINavigator;
 import io.github.Cruisoring.wrappers.UITable;
-import io.github.cruisoring.Lazy;
-import io.github.cruisoring.tuple.Tuple3;
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.poi.util.ArrayUtil;
 import org.openqa.selenium.By;
 
 import java.net.Proxy;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class HttpProxyListScreen extends Screen {
 //    public final String[] ProxyIndicators = new String[]{"IP Address", "IP", "Address"};
@@ -52,7 +45,7 @@ public class HttpProxyListScreen extends Screen {
     public List<Proxy> getAllProxies(){
         List<Proxy> proxies = getProxies();
         while (!navigator.isLastPage()) {
-            navigator.goNext();
+            navigator.goPageOrNext();
             proxies.addAll(getProxies());
         }
         return proxies;

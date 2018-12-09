@@ -221,7 +221,7 @@ public class StringExtensions {
         result = result.replaceAll("<input\\W+[^>]*value=\\\"([^\"]*)\\\"[^\\>]*>", "$1");
         String unescaped = StringEscapeUtils.unescapeHtml4(result);
         result = unescaped.replaceAll("<[^>]*>", "");
-        return result;
+        return result.trim();
     }
 
     public static String getFirstSegment(String template, Pattern pattern){

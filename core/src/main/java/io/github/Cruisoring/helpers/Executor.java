@@ -1,6 +1,7 @@
 package io.github.Cruisoring.helpers;
 
 import io.github.cruisoring.function.ConsumerThrowable;
+import io.github.cruisoring.function.RunnableThrowable;
 import io.github.cruisoring.function.SupplierThrowable;
 import sun.security.pkcs11.wrapper.Functions;
 
@@ -298,8 +299,7 @@ public class Executor{
      * @return          Returned values as a list.
      * @throws Throwable
      */
-    public static <T, R> List<R> runParallel(Function<T, R> howTo, List<T> tasks, long timeoutMinutes)
-            throws Exception{
+    public static <T, R> List<R> runParallel(Function<T, R> howTo, List<T> tasks, long timeoutMinutes){
         List<Callable<R>> callables = new ArrayList<>();
         tasks.stream().forEach(t -> {
             Callable<R> callable = () -> howTo.apply(t);
@@ -317,57 +317,83 @@ public class Executor{
         return runParallel(timeoutMinutes, callables);
     }
 
-    /**
-     * Run commands with one input to get one output in parallel.
-     * @param howTo     Method to perform action upon a task instance.
-     * @param tasks     All inputs of R type.
-     * @param timeoutMinutes    maximum time in minute to wait a process done
-     * @param <T>       Returned Type.
-     * @return          Returned values as a list.
-     * @throws Throwable
-     */
-    public static <T> List<Boolean> runParallel(ConsumerThrowable<T> howTo, List<T> tasks, long timeoutMinutes)
-            throws Exception{
+//    /**
+//     * Run commands with one input to get one output in parallel.
+//     * @param howTo     Method to perform action upon a task instance.
+//     * @param tasks     All inputs of R type.
+//     * @param timeoutMinutes    maximum time in minute to wait a process done
+//     * @param <T>       Returned Type.
+//     * @return          Returned values as a list.
+//     * @throws Throwable
+//     */
+//    public static <T> List<Boolean> runParallel(ConsumerThrowable<T> howTo, List<T> tasks, long timeoutMinutes)
+//            throws Exception{
+//
+//        Function<T, Boolean> function = (t) -> {
+//            try {
+//                howTo.accept(t);
+//                return true;
+//            }catch (Exception ex){
+//                return false;
+//            }
+//        };
+//
+//        List<Callable<Boolean>> callables = new ArrayList<>();
+//        tasks.stream().forEach(t -> {
+//            Callable<Boolean> callable = () -> function.apply(t);
+//            callables.add(callable);
+//        });
+//
+//        return runParallel(timeoutMinutes, callables);
+//    }
 
-        Function<T, Boolean> function = (t) -> {
+    public static Runnable asRunnable(RunnableThrowable runnableThrowable){
+        return () -> {
             try {
-                howTo.accept(t);
-                return true;
-            }catch (Exception ex){
-                return false;
+                runnableThrowable.run();
+            }catch (Exception e){
+                Logger.V(e);
             }
         };
-
-        List<Callable<Boolean>> callables = new ArrayList<>();
-        tasks.stream().forEach(t -> {
-            Callable<Boolean> callable = () -> function.apply(t);
-            callables.add(callable);
-        });
-
-        return runParallel(timeoutMinutes, callables);
     }
 
-    public static <T> List<T> runParallel(int nThreads, List<SupplierThrowable<T>> suppliers){
-        ExecutorService executor = Executors.newFixedThreadPool(nThreads);
-
-        List<CompletableFuture<T>> futures = suppliers.stream()
-                .map( supplier -> CompletableFuture.supplyAsync(supplier.orElse(null), executor))
-                .collect(Collectors.toList());
-
-        CompletableFuture<Void> all = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
-        CompletableFuture<List<T>> result = all.thenApply(v -> {
-            return futures.stream()
-                    .map(pageContentFuture -> pageContentFuture.join())
-                    .collect(Collectors.toList());
-        });
+    public static <T> void runParallel(List<RunnableThrowable> runnables){
         try {
+            ExecutorService executor = Executors.newFixedThreadPool(runnables.size());
+
+            List<CompletableFuture<Void>> futures = runnables.stream()
+                    .map(runnable -> CompletableFuture.runAsync(asRunnable(runnable), executor))
+                    .collect(Collectors.toList());
+
+            CompletableFuture<Void> all = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+            all.join();
+        } catch (Exception e){
+            Logger.W(e);
+        }
+    }
+
+    public static <T> List<T> getParallel(List<SupplierThrowable<T>> suppliers){
+        try {
+            ExecutorService executor = Executors.newFixedThreadPool(suppliers.size());
+
+            List<CompletableFuture<T>> futures = suppliers.stream()
+                    .map( supplier -> CompletableFuture.supplyAsync(supplier.orElse(null), executor))
+                    .collect(Collectors.toList());
+
+            CompletableFuture<Void> all = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+            CompletableFuture<List<T>> result = all.thenApply(v -> {
+                return futures.stream()
+                        .map(pageContentFuture -> pageContentFuture.join())
+                        .collect(Collectors.toList());
+            });
             return result.get();
         }catch (Exception ex){
+            Logger.W(ex);
             return null;
         }
     }
 
-    public static <R> List<R> runParallel(long timeoutMinutes, List<Callable<R>> callables) throws Exception{
+    public static <R> List<R> runParallel(long timeoutMinutes, List<Callable<R>> callables){
         ExecutorService EXEC = Executors.newCachedThreadPool();
         try {
             List<R> results;
@@ -384,6 +410,9 @@ public class Executor{
                     })
                     .collect(Collectors.toList());
             return results;
+        } catch (Exception e){
+            Logger.W(e);
+            return null;
         } finally{
             EXEC.shutdown();
         }

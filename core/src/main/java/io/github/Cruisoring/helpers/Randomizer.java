@@ -175,6 +175,38 @@ public class Randomizer {
         return array[index];
     }
 
+    public static List<Integer> getRandomIndex(int size){
+        List<Integer> indexes = new ArrayList<>();
+        for (int i = 0; i < size; i++) {
+            int next = random.nextInt(size);
+            if(!indexes.contains(next)){
+                indexes.add(next);
+                continue;
+            }
+
+            for (int j = 1; j < size; j++) {
+                int neighbour = (next+i)%size;
+                if(!indexes.contains(neighbour)){
+                    indexes.add(neighbour);
+                    break;
+                }
+            }
+        }
+        return indexes;
+    }
+
+    /**
+     * Get a random element of the given array.
+     * @param list  List containing multiple elements
+     * @param <T>   Type of the element
+     * @return      An element randomly fetched from the arry
+     */
+    public static <T> T getRandom(List<T> list){
+        int size = list.size();
+        int index = random.nextInt(size);
+        return list.get(index);
+    }
+
     public static Proxy getProxy(){
         Proxy proxy = getRandom(proxies.toArray(new Proxy[0]));
         Logger.D(proxy.toString());

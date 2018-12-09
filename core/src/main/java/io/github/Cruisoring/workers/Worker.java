@@ -73,7 +73,7 @@ public class Worker implements AutoCloseable, WorkingContext {
     static {
         GraphicsDevice gd = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
         int width = gd.getDisplayMode().getWidth();
-        int height = gd.getDisplayMode().getHeight();
+        int height = gd.getDisplayMode().getHeight()-300;
         DefaultMonitorDimension = new Dimension(width, height);
         HalfHorizontalDimension = new Dimension(width/2, height);
         TwoThirdVerticalDimension = new Dimension(width, height*2/3);
@@ -230,9 +230,18 @@ public class Worker implements AutoCloseable, WorkingContext {
         }
     }
 
+    public static Boolean tryClose(Worker worker){
+        try {
+            close(worker);
+            return true;
+        }catch (Exception e){
+            return false;
+        }
+    }
+
     public static void closeAll(){
         try {
-            List<Boolean> classResults = Executor.runParallel((Worker worker) -> worker.close(),
+            Executor.runParallel(Worker::tryClose,
                     activeWorkers.stream().collect(Collectors.toList()), 10*1000);
         }catch (Exception ex){
             Logger.W(ex);
@@ -646,6 +655,22 @@ public class Worker implements AutoCloseable, WorkingContext {
             Logger.V("%s with %s", ex.getClass().getSimpleName(), e.getTagName());
             return true;
         }
+    }
+
+    public Boolean scrollTo(int xOffset, int yOffset){
+        Boolean toPosition = (Boolean) driver.executeScript("window.scrollTo(arguments[0], arguments[1]); return (arguments[0]==window.scrollX) || (arguments[1]==window.scrollY);", xOffset, yOffset);
+        return toPosition;
+    }
+
+    public Boolean scrollBy(int xStep, int yStep){
+        Boolean isScrolled = (Boolean) driver.executeScript("var xPos = window.scrollX; var yPos = window.scrollY; window.scrollBy(arguments[0], arguments[1]); return (xPos!=window.scrollX) || (yPos!=window.scrollY);", xStep, yStep);
+        return isScrolled;
+    }
+
+    public Boolean scrollSmoothly(int xStep, int yStep, int interval){
+        Boolean result = Executor.testUntil(() -> !scrollBy(xStep, yStep), 20*1000, interval, 0);
+        Logger.V("%sscrolled to %s in 20s.", result?"":"Not ", yStep>0?"bottom":"top");
+        return result;
     }
 
     public Rectangle arrangeWindow(Rectangle rect){
