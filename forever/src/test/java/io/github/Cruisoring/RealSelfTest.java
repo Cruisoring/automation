@@ -1,29 +1,14 @@
 package io.github.Cruisoring;
 
-import io.github.Cruisoring.helpers.*;
-import io.github.Cruisoring.jt2345.CheciScreen;
-import io.github.Cruisoring.jt2345.DetailScreen;
-import io.github.Cruisoring.wrappers.UITable;
 import io.github.cruisoring.Functions;
-import org.apache.commons.lang3.StringUtils;
 import org.junit.AfterClass;
 import org.junit.Test;
 import realSelf.FindScreen;
 import realSelf.SearchResultsScreen;
 import realSelf.SpecialtyScreen;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 public class RealSelfTest {
 

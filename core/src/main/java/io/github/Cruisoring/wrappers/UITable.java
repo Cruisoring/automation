@@ -6,7 +6,6 @@ import io.github.Cruisoring.interfaces.RowDataSupplier;
 import io.github.Cruisoring.interfaces.WorkingContext;
 import io.github.cruisoring.Lazy;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.poi.ss.usermodel.Row;
 import org.openqa.selenium.By;
 
 import java.io.Closeable;
@@ -224,6 +223,21 @@ public class UITable extends UICollection<UITable.UIRow> implements RowDataSuppl
         String[] values = Arrays.stream(columns)
                 .mapToObj(i -> rowCells[i]).toArray(String[]::new);
         return values;
+    }
+
+    public List<String[]> getValuesOfColumns(int... columns){
+        Objects.requireNonNull(columns);
+
+        List<String[]> allCells = getTableCells();
+
+        List<String[]> filteredValues = allCells.stream()
+                .map(cells ->
+                        Arrays.stream(columns).boxed()
+                                .filter(i -> i < cells.length)
+                                .map(i -> cells[i]).toArray(size -> new String[size])
+                ).collect(Collectors.toList());
+
+        return filteredValues;
     }
 
     /**

@@ -12,9 +12,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.openqa.selenium.*;
 import org.openqa.selenium.interactions.Action;
 import org.openqa.selenium.interactions.Actions;
-import org.openqa.selenium.interactions.internal.Locatable;
 
-import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -287,8 +285,15 @@ public class UIObject implements IUIObject {
 
     @Override
     public List<WebElement> findElements(By by) {
-        WebElement rootElement = getElement();
-        return rootElement.findElements(by);
+        try {
+            WebElement rootElement = getElement();
+            if(rootElement == null)
+                return null;
+            return rootElement.findElements(by);
+        }catch (Exception e){
+            Logger.V(e);
+            return null;
+        }
     }
 
     @Override

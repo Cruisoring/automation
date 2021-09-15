@@ -6,7 +6,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.testng.annotations.AfterClass;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URL;

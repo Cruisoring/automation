@@ -2,7 +2,6 @@ package realSelf;
 
 import io.github.Cruisoring.helpers.StringExtensions;
 import io.github.Cruisoring.interfaces.WorkingContext;
-import io.github.Cruisoring.wrappers.UILink;
 import io.github.Cruisoring.wrappers.UIObject;
 import org.openqa.selenium.By;
 

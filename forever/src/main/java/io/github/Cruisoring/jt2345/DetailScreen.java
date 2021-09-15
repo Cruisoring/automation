@@ -9,7 +9,6 @@ import org.openqa.selenium.By;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 public class DetailScreen extends Screen {
 

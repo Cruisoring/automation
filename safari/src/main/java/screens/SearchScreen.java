@@ -1,5 +1,6 @@
 package screens;
 
+import components.resultItem;
 import io.github.Cruisoring.helpers.Logger;
 import io.github.Cruisoring.helpers.StringExtensions;
 import io.github.Cruisoring.helpers.Worker;
@@ -7,7 +8,6 @@ import io.github.Cruisoring.wrappers.Screen;
 import io.github.Cruisoring.wrappers.UICollection;
 import io.github.Cruisoring.wrappers.UIEdit;
 import io.github.Cruisoring.wrappers.UIObject;
-import components.resultItem;
 import org.openqa.selenium.By;
 
 public class SearchScreen extends Screen {

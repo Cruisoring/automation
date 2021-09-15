@@ -1,7 +1,5 @@
 package io.github.Cruisoring.helpers;
 
-import io.github.Cruisoring.helpers.ImageHelper;
-import io.github.Cruisoring.helpers.Logger;
 import io.github.cruisoring.tuple.Tuple2;
 import org.junit.Test;
 
@@ -9,10 +7,7 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
-
-import static org.junit.Assert.*;
 
 public class ImageHelperTest {
 

@@ -1,7 +1,6 @@
 package screens;
 
 import components.ResultItem;
-import io.github.Cruisoring.helpers.Worker;
 import io.github.Cruisoring.workers.Worker;
 import io.github.Cruisoring.wrappers.Screen;
 import io.github.Cruisoring.wrappers.UICollection;

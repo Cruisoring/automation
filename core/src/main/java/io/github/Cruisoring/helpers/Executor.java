@@ -1,14 +1,11 @@
 package io.github.Cruisoring.helpers;
 
-import io.github.cruisoring.function.ConsumerThrowable;
-import io.github.cruisoring.function.RunnableThrowable;
-import io.github.cruisoring.function.SupplierThrowable;
-import sun.security.pkcs11.wrapper.Functions;
+import io.github.cruisoring.throwables.RunnableThrowable;
+import io.github.cruisoring.throwables.SupplierThrowable;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.function.BooleanSupplier;

@@ -1,6 +1,5 @@
 package io.github.Cruisoring;
 
-import com.sun.corba.se.spi.orbutil.threadpool.Work;
 import io.github.Cruisoring.enums.DriverType;
 import io.github.Cruisoring.helpers.Logger;
 import io.github.Cruisoring.helpers.Randomizer;
@@ -62,7 +61,7 @@ public class freeProxyListScreenTest {
     @Test
     public void getSocksProxies() {
         Worker reference=null;
-        try (Worker worker = Worker.getAny();
+        try (Worker worker = Worker.create(DriverType.Chrome);
              Writer writer = new BufferedWriter(new OutputStreamWriter(
                 new FileOutputStream(proxyFile, true), "UTF-8"));
 
@@ -118,7 +117,7 @@ public class freeProxyListScreenTest {
 
             worker.gotoUrl("https://free-proxy-list.net/");
             HttpProxyListScreen mainScreen = worker.getScreen(HttpProxyListScreen.class);
-            mainScreen.navigator.goLast();
+            mainScreen.navigator.gotoPageOrLast();
             Assert.assertTrue(mainScreen.navigator.isLastPage());
         }catch (Exception ex){
             if(reference != null){

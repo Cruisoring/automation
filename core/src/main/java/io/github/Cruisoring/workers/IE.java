@@ -3,8 +3,6 @@ package io.github.Cruisoring.workers;
 import io.github.Cruisoring.enums.DriverType;
 import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.Proxy;
-import org.openqa.selenium.UnexpectedAlertBehaviour;
-import org.openqa.selenium.edge.EdgeDriver;
 import org.openqa.selenium.ie.InternetExplorerDriver;
 import org.openqa.selenium.ie.InternetExplorerOptions;
 

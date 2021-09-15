@@ -28,9 +28,6 @@ public class SearchScreenTest {
     Set<String> keywordSet = Arrays.stream(keywords)
             .flatMap(keys -> Arrays.stream(keys.split("[\\s,\\t]+")))
             .collect(Collectors.toSet());
-//    private boolean isTitleMatched(String title){
-//        return keywordSet.stream().filter(k -> StringUtils.containsIgnoreCase(title, k)).count() > 2;
-//    }
 
     String getTitleColor(String title){
         long count = keywordSet.stream()
@@ -64,7 +61,7 @@ public class SearchScreenTest {
 
     @Test
     public void searchBaidu() {
-        try (Worker worker = Worker.create(DriverType.Edge);){
+        try (Worker worker = Worker.create(DriverType.Opera);){
             worker.gotoUrl("http://www.baidu.com");
             SearchScreen searchScreen = worker.getScreen(SearchScreen.class);
 
@@ -88,7 +85,7 @@ public class SearchScreenTest {
 
     @Test
     public void searchAsk() {
-        try (Worker worker = Worker.create(DriverType.Chrome);){
+        try (Worker worker = Worker.create(DriverType.Firefox);){
             worker.gotoUrl("http://www.ask.com");
             SearchScreen searchScreen = worker.getScreen(SearchScreen.class);
 

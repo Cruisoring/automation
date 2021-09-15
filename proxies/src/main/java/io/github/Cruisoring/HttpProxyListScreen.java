@@ -9,7 +9,9 @@ import io.github.Cruisoring.wrappers.UITable;
 import org.openqa.selenium.By;
 
 import java.net.Proxy;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class HttpProxyListScreen extends Screen {
 //    public final String[] ProxyIndicators = new String[]{"IP Address", "IP", "Address"};
@@ -25,7 +27,7 @@ public class HttpProxyListScreen extends Screen {
     protected HttpProxyListScreen(Worker worker) {
         super(worker);
         dataTable = new UITable(this, "table");
-        navigator = new UINavigator(this, By.cssSelector("ul.pagination"), 0, By.cssSelector("li"), UINavigator.defaultPagePattern);
+        navigator = new UINavigator(this, By.cssSelector("ul.pagination"), 0, By.cssSelector("li"));
     }
 
     public List<Proxy> getProxies(){
@@ -45,7 +47,7 @@ public class HttpProxyListScreen extends Screen {
     public List<Proxy> getAllProxies(){
         List<Proxy> proxies = getProxies();
         while (!navigator.isLastPage()) {
-            navigator.goPageOrNext();
+            navigator.gotoPageOrNext();
             proxies.addAll(getProxies());
         }
         return proxies;

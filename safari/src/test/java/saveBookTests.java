@@ -1,4 +1,7 @@
-import io.github.Cruisoring.helpers.*;
+import io.github.Cruisoring.helpers.DateTimeHelper;
+import io.github.Cruisoring.helpers.HtmlHelper;
+import io.github.Cruisoring.helpers.Logger;
+import io.github.Cruisoring.helpers.ResourceHelper;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;

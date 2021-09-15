@@ -1,6 +1,9 @@
 package io.github.Cruisoring;
 
-import io.github.Cruisoring.helpers.*;
+import io.github.Cruisoring.helpers.Logger;
+import io.github.Cruisoring.helpers.ResourceHelper;
+import io.github.Cruisoring.helpers.StringExtensions;
+import io.github.Cruisoring.helpers.URLHelper;
 import io.github.Cruisoring.screens.HomeScreen;
 import io.github.Cruisoring.wrappers.UIObject;
 import org.openqa.selenium.By;

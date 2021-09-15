@@ -70,7 +70,7 @@ public class UIEdit extends UIObject implements IUIEdit {
 
     @Override
     public void enterText(String text) {
-        if(perform(text + "\n\r")) {
+        if(perform(text + "\t")) {
             Logger.D("'%s' is entered to %s", text, this);
         }
     }
@@ -87,8 +87,8 @@ public class UIEdit extends UIObject implements IUIEdit {
     @Override
     public Boolean perform(String text) {
         return super.perform(new Runnable[]{
-                () -> sendKeys(text),
                 () -> enterByScript(text),
+                () -> sendKeys(text),
                 () -> enterChars(text),
         }, null, 0);
     }

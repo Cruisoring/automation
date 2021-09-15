@@ -1,6 +1,8 @@
 package io.github.Cruisoring.helpers;
 
 import io.github.cruisoring.Functions;
+import io.github.cruisoring.throwables.FunctionThrowable;
+import io.github.cruisoring.throwables.SupplierThrowable;
 import io.github.cruisoring.tuple.Tuple;
 import io.github.cruisoring.tuple.Tuple2;
 
@@ -45,8 +47,9 @@ public class ImageHelper {
     public static Tuple2<BufferedImage, String> getTypedImage(URL imageUrl){
         Objects.requireNonNull(imageUrl);
 
+        SupplierThrowable<InputStream> openStream = imageUrl::openStream;
         try (
-                InputStream inputStream = (InputStream) Functions.ReturnsDefaultValue.apply(() -> imageUrl.openStream());
+                InputStream inputStream = Functions.tryGet(openStream);
                 ImageInputStream imageInputStream = ImageIO.createImageInputStream(inputStream);
         ){
             Iterator iter = ImageIO.getImageReaders(imageInputStream);

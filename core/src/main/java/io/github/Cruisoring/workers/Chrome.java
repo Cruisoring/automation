@@ -2,7 +2,9 @@ package io.github.Cruisoring.workers;
 
 import io.github.Cruisoring.enums.DriverType;
 import io.github.Cruisoring.helpers.Logger;
-import org.openqa.selenium.*;
+import org.openqa.selenium.Capabilities;
+import org.openqa.selenium.Proxy;
+import org.openqa.selenium.Rectangle;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 

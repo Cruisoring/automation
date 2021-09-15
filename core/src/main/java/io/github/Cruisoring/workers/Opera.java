@@ -2,13 +2,9 @@ package io.github.Cruisoring.workers;
 
 import io.github.Cruisoring.enums.DriverType;
 import org.openqa.selenium.Capabilities;
-import org.openqa.selenium.MutableCapabilities;
 import org.openqa.selenium.Proxy;
-import org.openqa.selenium.Rectangle;
 import org.openqa.selenium.opera.OperaDriver;
 import org.openqa.selenium.opera.OperaOptions;
-
-import java.io.File;
 
 public class Opera extends Worker {
     protected static final String OperaBinKey = "opera.bin";

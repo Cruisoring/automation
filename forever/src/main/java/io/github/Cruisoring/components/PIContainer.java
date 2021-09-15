@@ -6,8 +6,6 @@ import io.github.Cruisoring.wrappers.UILink;
 import io.github.Cruisoring.wrappers.UIObject;
 import org.openqa.selenium.By;
 
-import java.net.URL;
-
 public class PIContainer extends UIObject {
     public static final By piContainerBy = By.cssSelector("div.pi_container");
 

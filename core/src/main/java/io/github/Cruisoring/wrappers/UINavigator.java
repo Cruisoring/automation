@@ -4,7 +4,6 @@ import io.github.Cruisoring.helpers.Logger;
 import io.github.Cruisoring.helpers.MapHelper;
 import io.github.Cruisoring.interfaces.WorkingContext;
 import io.github.cruisoring.Lazy;
-import io.github.cruisoring.utility.ArrayHelper;
 import org.openqa.selenium.By;
 
 import java.util.Arrays;
@@ -125,15 +124,19 @@ public class UINavigator extends UICollection {
     }
 
     public boolean gotoPage(String... pageNames){
-        if(pageNames.length > 0) {
-            List<String> pageTexts = asTexts();
-            List<String> keys = Arrays.asList(pageNames);
-            String matched = MapHelper.bestMatchedKey(pageTexts, keys);
-            if(matched != null){
-                get(pageTexts.indexOf(matched)).click(DefaultAfterClickingWaitMills);
-                invalidate();
-                return true;
+        try {
+            if (pageNames.length > 0) {
+                List<String> pageTexts = asTexts();
+                List<String> keys = Arrays.asList(pageNames);
+                String matched = MapHelper.bestMatchedKey(pageTexts, keys);
+                if (matched != null) {
+                    get(pageTexts.indexOf(matched)).click(DefaultAfterClickingWaitMills);
+                    invalidate();
+                    return true;
+                }
             }
+        }catch (NullPointerException nullException){
+            Logger.D(nullException);
         }
         return false;
     }
@@ -148,8 +151,13 @@ public class UINavigator extends UICollection {
     }
 
     public boolean gotoPageOrNext(String... pageNames){
-        return gotoPage(pageNames)
-                || gotoPage(nextPage.getValue()) || gotoPage(Nexts.toArray(new String[0]));
+        try {
+            return gotoPage(pageNames)
+                    || gotoPage(nextPage.getValue()) || gotoPage(Nexts.toArray(new String[0]));
+        }catch (Exception e){
+            Logger.D(e);
+            return false;
+        }
     }
 
     public boolean gotoPageOrPrevious(String... pageNames){
@@ -157,12 +165,12 @@ public class UINavigator extends UICollection {
                 || gotoPage(previousPage.getValue()) || gotoPage(Previouses.toArray(new String[0]));
     }
 
-    public boolean goPageOrLast(String... pageNames){
+    public boolean gotoPageOrLast(String... pageNames){
         return gotoPage(pageNames)
                 || gotoPage(lastPage.getValue()) || gotoPage(Lasts.toArray(new String[0]));
     }
 
-    public boolean goPageOrFirst(String... pageNames){
+    public boolean gotoPageOrFirst(String... pageNames){
         return gotoPage(pageNames)
                 || gotoPage(firstPage.getValue()) || gotoPage(Firsts.toArray(new String[0]));
     }

@@ -171,6 +171,8 @@ public class Randomizer {
      */
     public static <T> T getRandom(T[] array){
         int size = array.length;
+        if(size == 0)
+            return null;
         int index = random.nextInt(size);
         return array[index];
     }

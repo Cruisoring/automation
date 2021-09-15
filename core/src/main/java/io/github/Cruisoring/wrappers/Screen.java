@@ -1,10 +1,13 @@
 package io.github.Cruisoring.wrappers;
 
-import io.github.Cruisoring.helpers.*;
+import io.github.Cruisoring.helpers.ClassHelper;
+import io.github.Cruisoring.helpers.Executor;
+import io.github.Cruisoring.helpers.Logger;
+import io.github.Cruisoring.helpers.StringExtensions;
 import io.github.Cruisoring.interfaces.WorkingContext;
 import io.github.Cruisoring.workers.Worker;
-import io.github.cruisoring.function.FunctionThrowable;
 import io.github.cruisoring.repository.TupleRepository2;
+import io.github.cruisoring.throwables.FunctionThrowable;
 import io.github.cruisoring.tuple.Tuple;
 import org.apache.commons.lang3.StringUtils;
 import org.openqa.selenium.By;

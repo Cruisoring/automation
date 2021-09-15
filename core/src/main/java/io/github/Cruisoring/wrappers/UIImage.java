@@ -1,22 +1,12 @@
 package io.github.Cruisoring.wrappers;
 
 import io.github.Cruisoring.interfaces.WorkingContext;
-import io.github.cruisoring.Functions;
-import io.github.cruisoring.tuple.Tuple;
-import io.github.cruisoring.tuple.Tuple2;
 import org.openqa.selenium.By;
 
 import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
-import javax.imageio.stream.ImageInputStream;
 import java.awt.image.BufferedImage;
-import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
-import java.util.Iterator;
-import java.util.Objects;
 
 public class UIImage extends UIObject {
     public static final Class UIImageClass = UIImage.class;

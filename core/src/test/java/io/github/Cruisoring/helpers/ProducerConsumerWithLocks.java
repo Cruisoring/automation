@@ -1,7 +1,7 @@
 package io.github.Cruisoring.helpers;
 
-import io.github.cruisoring.function.FunctionThrowable;
-import io.github.cruisoring.function.SupplierThrowable;
+import io.github.cruisoring.throwables.FunctionThrowable;
+import io.github.cruisoring.throwables.SupplierThrowable;
 
 import java.time.Duration;
 import java.time.LocalDateTime;

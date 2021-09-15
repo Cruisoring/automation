@@ -2,19 +2,15 @@ package io.github.Cruisoring.screens;
 
 
 import io.github.Cruisoring.components.Country;
-import io.github.Cruisoring.helpers.Logger;
 import io.github.Cruisoring.helpers.Worker;
 import io.github.Cruisoring.wrappers.Screen;
 import io.github.Cruisoring.wrappers.UICollection;
 import io.github.cruisoring.Lazy;
 import io.github.cruisoring.tuple.Tuple;
 import io.github.cruisoring.tuple.Tuple3;
-import org.apache.commons.lang3.StringUtils;
 import org.openqa.selenium.By;
 
-import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.stream.Collectors;
 
 public class HomeScreen extends Screen {

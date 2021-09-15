@@ -1,10 +1,10 @@
 package screens;
 
+import components.bookFull;
+import components.topBars;
 import io.github.Cruisoring.workers.Worker;
 import io.github.Cruisoring.wrappers.Screen;
 import io.github.Cruisoring.wrappers.UIObject;
-import components.bookFull;
-import components.topBars;
 import org.openqa.selenium.By;
 
 public class baseScreen extends Screen {

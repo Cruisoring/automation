@@ -3,7 +3,9 @@ package io.github.Cruisoring.screens;
 import io.github.Cruisoring.helpers.Logger;
 import io.github.Cruisoring.helpers.StringExtensions;
 import io.github.Cruisoring.helpers.Worker;
-import io.github.Cruisoring.wrappers.*;
+import io.github.Cruisoring.wrappers.Screen;
+import io.github.Cruisoring.wrappers.UINavigator;
+import io.github.Cruisoring.wrappers.UIObject;
 import org.openqa.selenium.By;
 
 import java.net.URL;

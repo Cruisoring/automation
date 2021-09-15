@@ -1,6 +1,6 @@
 package io.github.Cruisoring.helpers;
 
-import io.github.cruisoring.function.SupplierThrowable;
+import io.github.cruisoring.throwables.SupplierThrowable;
 import io.github.cruisoring.tuple.Tuple3;
 import org.junit.Test;
 

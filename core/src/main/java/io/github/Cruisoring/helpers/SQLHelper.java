@@ -1,9 +1,8 @@
 package io.github.Cruisoring.helpers;
 
-import io.github.cruisoring.Functions;
-import io.github.cruisoring.function.FunctionThrowable;
-import io.github.cruisoring.function.RunnableThrowable;
-import io.github.cruisoring.function.SupplierThrowable;
+import io.github.cruisoring.throwables.FunctionThrowable;
+import io.github.cruisoring.throwables.RunnableThrowable;
+import io.github.cruisoring.throwables.SupplierThrowable;
 import org.apache.commons.lang3.StringUtils;
 import org.openqa.selenium.InvalidArgumentException;
 
@@ -37,7 +36,7 @@ public class SQLHelper {
         }
 
         default void execute(PreparedStatement statement, Integer index, Object value) {
-            Functions.Default.run(asRunnable(statement, index, value));
+            asRunnable(statement, index, value).tryRun();
         }
     }
 
@@ -50,7 +49,7 @@ public class SQLHelper {
         }
 
         default Object execute(ResultSet resultSet, Integer index) {
-            return Functions.Default.apply(asRunnable(resultSet, index));
+            return asRunnable(resultSet, index).tryGet();
         }
     }
 
@@ -234,7 +233,7 @@ public class SQLHelper {
         List<T> list = new ArrayList<T>();
         try {
             while(resultSet.next()){
-                T t = (T) Functions.Default.apply(converter, resultSet);
+                T t = converter.tryApply(resultSet);
                 list.add(t);
             }
         } catch (SQLException e){
@@ -592,7 +591,7 @@ public class SQLHelper {
             if (!rowToArrayExtractors.containsKey(script)) {
                 rowToArrayExtractors.put(script, getRowValueArrayExtractor(resultSet));
             }
-            Object[] values = (Object[]) Functions.Default.apply(rowToArrayExtractors.get(script), resultSet);
+            Object[] values = rowToArrayExtractors.get(script).tryApply(resultSet);
             if (values == null) {
                 Logger.I("Failed to find row with keys: %s", ReconcileHelper.getArrayDescription(actualArgs));
             } else if (resultSet.next()) {

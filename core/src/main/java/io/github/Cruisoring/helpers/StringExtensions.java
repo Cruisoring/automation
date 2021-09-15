@@ -201,6 +201,15 @@ public class StringExtensions {
         return list;
     }
 
+    public static String getText(String context, String pattern){
+        String segment0 = getSegments(context, pattern).get(0);
+
+        String text = StringExtensions.extractHtmlText(segment0).trim();
+
+        return text;
+
+    }
+
     public static List<String> getInnerText(String template, String tagname, boolean trim){
         Pattern pattern = Pattern.compile("<td[^>]*>[\\s\\S]*?</td>".replaceAll("td", tagname));
         List<String> segments = getSegments(template, pattern);
@@ -214,14 +223,17 @@ public class StringExtensions {
     }
 
     public static String extractHtmlText(String template) {
+
         if (template == null) return null;
 
         String result = template.replaceAll("\\b(?!value)([-|_|\\w]+)=\\\"[^*]*?\\\"", "");
         result = result.replaceAll("<svg[^>]*>[\\s\\S]*?</svg>", "");
         result = result.replaceAll("<input\\W+[^>]*value=\\\"([^\"]*)\\\"[^\\>]*>", "$1");
+        result = result.replaceAll("<!\\[CDATA\\[(.*?)\\]\\]>", "$1");
         String unescaped = StringEscapeUtils.unescapeHtml4(result);
         result = unescaped.replaceAll("<[^>]*>", "");
-        return result.trim();
+
+        return result;
     }
 
     public static String getFirstSegment(String template, Pattern pattern){
@@ -517,5 +529,11 @@ public class StringExtensions {
         }
 
         return result;
+    }
+
+    public static String getFirstSegmentByLeadingTag(String context, String pattern){
+        List<String> segments = getSegments(context, pattern);
+
+        return segments.isEmpty() ? null : segments.get(0);
     }
 }

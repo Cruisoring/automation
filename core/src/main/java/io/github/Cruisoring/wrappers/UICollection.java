@@ -7,7 +7,7 @@ import io.github.Cruisoring.helpers.StringExtensions;
 import io.github.Cruisoring.interfaces.Creatable;
 import io.github.Cruisoring.interfaces.WorkingContext;
 import io.github.cruisoring.Lazy;
-import io.github.cruisoring.function.FunctionThrowable;
+import io.github.cruisoring.throwables.FunctionThrowable;
 import org.apache.commons.lang3.StringUtils;
 import org.openqa.selenium.By;
 

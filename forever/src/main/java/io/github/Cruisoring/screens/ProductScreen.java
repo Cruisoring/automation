@@ -1,13 +1,10 @@
 package io.github.Cruisoring.screens;
 
-import io.github.Cruisoring.helpers.StringExtensions;
 import io.github.Cruisoring.helpers.Worker;
 import io.github.Cruisoring.wrappers.UIImage;
 import io.github.Cruisoring.wrappers.UIObject;
-import org.apache.commons.lang3.StringUtils;
 import org.openqa.selenium.By;
 
-import java.awt.image.BufferedImage;
 import java.net.URL;
 
 public class ProductScreen extends BaseScreen {

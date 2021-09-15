@@ -4,10 +4,8 @@ import io.github.Cruisoring.helpers.StringExtensions;
 import io.github.Cruisoring.helpers.Worker;
 import io.github.Cruisoring.wrappers.Screen;
 import io.github.Cruisoring.wrappers.UIObject;
-import io.github.cruisoring.Functions;
 import org.openqa.selenium.By;
 
-import java.net.URL;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;

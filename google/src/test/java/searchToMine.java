@@ -1,7 +1,6 @@
 import io.github.Cruisoring.helpers.Logger;
 import io.github.Cruisoring.helpers.ResourceHelper;
 import io.github.Cruisoring.helpers.Worker;
-import org.openqa.selenium.WebDriver;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;

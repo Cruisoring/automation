@@ -56,7 +56,7 @@ public class WorkerTest {
         Logger.V(MapHelper.asJson(chrome.driver.getCapabilities().asMap()));
 
         Executor.sleep(3000);
-        Functions.Default.run(chrome::close);
+        Functions.tryRun(chrome::close);
     }
 
     @Test
@@ -73,7 +73,7 @@ public class WorkerTest {
         Executor.sleep(3000);
 
         Logger.V(MapHelper.asJson(ie.driver.getCapabilities().asMap()));
-        Functions.Default.run(ie::close);
+        Functions.tryRun(ie::close);
 
     }
 
@@ -87,7 +87,7 @@ public class WorkerTest {
         Executor.sleep(3000);
         edge.arrangeWindow(Worker.DefaultBrowserRectangls.get(6)[3]);
         Executor.sleep(3000);
-        Functions.Default.run(edge::close);
+        Functions.tryRun(edge::close);
     }
 
     @Test
@@ -102,7 +102,7 @@ public class WorkerTest {
         Executor.sleep(3000);
         worker.arrangeWindow(Worker.DefaultBrowserRectangls.get(5)[4]);
         Executor.sleep(3000);
-        Functions.Default.run(worker::close);
+        Functions.tryRun(worker::close);
     }
 
     @Test
@@ -116,7 +116,7 @@ public class WorkerTest {
         Executor.sleep(3000);
         worker.arrangeWindow(Worker.DefaultBrowserRectangls.get(5)[4]);
         Executor.sleep(3000);
-        Functions.Default.run(worker::close);
+        Functions.tryRun(worker::close);
     }
 
     @Test

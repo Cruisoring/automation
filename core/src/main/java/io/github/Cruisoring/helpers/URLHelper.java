@@ -2,17 +2,15 @@ package io.github.Cruisoring.helpers;
 
 import org.apache.commons.lang3.StringUtils;
 
-import java.io.*;
-import java.net.*;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.util.ArrayList;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.URL;
 import java.util.List;
-import java.util.Objects;
-import java.util.Scanner;
-import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 public class URLHelper {
 

@@ -11,10 +11,10 @@ import io.github.cruisoring.Lazy;
 import io.github.cruisoring.tuple.Tuple3;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.openqa.selenium.*;
 import org.openqa.selenium.Dimension;
 import org.openqa.selenium.Point;
 import org.openqa.selenium.Rectangle;
+import org.openqa.selenium.*;
 import org.openqa.selenium.remote.RemoteWebDriver;
 
 import java.awt.*;
@@ -26,12 +26,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-
-import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -76,7 +74,7 @@ public class Worker implements AutoCloseable, WorkingContext {
         int height = gd.getDisplayMode().getHeight()-300;
         DefaultMonitorDimension = new Dimension(width, height);
         HalfHorizontalDimension = new Dimension(width/2, height);
-        TwoThirdVerticalDimension = new Dimension(width, height*2/3);
+        TwoThirdVerticalDimension = new Dimension(width, height);
         HalfVerticalDimension = new Dimension(width, height/2);
         OneThirdHorizontalDimension = new Dimension(width/3, height);
         QuarterMonitorDimension = new Dimension(width/2, height/2);
@@ -110,7 +108,8 @@ public class Worker implements AutoCloseable, WorkingContext {
         }
 
         String defaultWithProxySetting = System.getProperty("defaultWithProxy");
-        defaultWithProxy = (Boolean) Functions.ReturnsDefaultValue.apply(() -> Boolean.valueOf(System.getProperty("defaultWithProxy")));
+        String defaultWithProxyProperty = System.getProperty("defaultWithProxy");
+        defaultWithProxy = defaultWithProxyProperty == null ? false : Boolean.valueOf(defaultWithProxyProperty);
     }
 
     private static Proxy[] getProxies(){
